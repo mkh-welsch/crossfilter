@@ -45,27 +45,27 @@ struct GroupIndex {
   void resize(std::size_t newSize) {
     data.resize(newSize);
   }
-  template<bool B = true>
+  template<typename F, bool B = true>
   typename std::enable_if<B && Flat,void>::type
-  for_each(std::size_t i, const std::function<void(std::size_t index)> & functor) {
+  for_each(std::size_t i, F functor) {
     functor(data[i]);
   }
-  template<bool B = true>
+  template<typename F, bool B = true>
   typename std::enable_if<B && !Flat,void>::type
-  for_each(std::size_t i, const std::function<void(std::size_t index)> & functor) {
+  for_each(std::size_t i, F functor) {
     auto & e  = data[i];
     for(auto t : e) {
       functor(t);
     }
   }
-  template<bool B = true>
+  template<typename F, bool B = true>
   typename std::enable_if<B && Flat,void>::type
-  set(std::size_t i, const std::function<std::size_t (std::size_t index)> & functor) {
+  set(std::size_t i, F functor) {
     data[i] = functor(data[i]);
   }
-  template<bool B = true>
+  template<typename F, bool B = true>
   typename std::enable_if<B && !Flat,void>::type
-  set(std::size_t i, const std::function<std::size_t(std::size_t index)> & functor) {
+  set(std::size_t i, F functor) {
     auto & e  = data[i];
     for(auto &t : e) {
       t = functor(t);
