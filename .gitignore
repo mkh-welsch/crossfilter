@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Temporary directories
+benchmark/benchBin
+test/testBin/
+build/
+docs/html/
