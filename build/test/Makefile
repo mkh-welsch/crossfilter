@@ -48,10 +48,10 @@ RM = /Applications/CMake.app/Contents/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/michaelwelsch/Downloads/cppcrossfilter_210518
+CMAKE_SOURCE_DIR = /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build
+CMAKE_BINARY_DIR = /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -91,14 +91,14 @@ test/fast: test
 
 # The main all target
 all: cmake_check_build_system
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(CMAKE_COMMAND) -E cmake_progress_start /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build/CMakeFiles /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build/test/CMakeFiles/progress.marks
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f CMakeFiles/Makefile2 test/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build/CMakeFiles 0
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(CMAKE_COMMAND) -E cmake_progress_start /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/CMakeFiles /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test/CMakeFiles/progress.marks
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f CMakeFiles/Makefile2 test/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f CMakeFiles/Makefile2 test/clean
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f CMakeFiles/Makefile2 test/clean
 .PHONY : clean
 
 # The main clean target
@@ -108,22 +108,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f CMakeFiles/Makefile2 test/preinstall
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f CMakeFiles/Makefile2 test/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f CMakeFiles/Makefile2 test/preinstall
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f CMakeFiles/Makefile2 test/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 test/CMakeFiles/crossfilter_js_test.dir/rule:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/crossfilter_js_test.dir/rule
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/crossfilter_js_test.dir/rule
 .PHONY : test/CMakeFiles/crossfilter_js_test.dir/rule
 
 # Convenience name for target.
@@ -133,12 +133,12 @@ crossfilter_js_test: test/CMakeFiles/crossfilter_js_test.dir/rule
 
 # fast build rule for target.
 crossfilter_js_test/fast:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_test.dir/build.make test/CMakeFiles/crossfilter_js_test.dir/build
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_test.dir/build.make test/CMakeFiles/crossfilter_js_test.dir/build
 .PHONY : crossfilter_js_test/fast
 
 # Convenience name for target.
 test/CMakeFiles/crossfilter_test.dir/rule:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/crossfilter_test.dir/rule
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/crossfilter_test.dir/rule
 .PHONY : test/CMakeFiles/crossfilter_test.dir/rule
 
 # Convenience name for target.
@@ -148,12 +148,12 @@ crossfilter_test: test/CMakeFiles/crossfilter_test.dir/rule
 
 # fast build rule for target.
 crossfilter_test/fast:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_test.dir/build.make test/CMakeFiles/crossfilter_test.dir/build
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_test.dir/build.make test/CMakeFiles/crossfilter_test.dir/build
 .PHONY : crossfilter_test/fast
 
 # Convenience name for target.
 test/CMakeFiles/crossfilter_js_remove.dir/rule:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/crossfilter_js_remove.dir/rule
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/crossfilter_js_remove.dir/rule
 .PHONY : test/CMakeFiles/crossfilter_js_remove.dir/rule
 
 # Convenience name for target.
@@ -163,12 +163,12 @@ crossfilter_js_remove: test/CMakeFiles/crossfilter_js_remove.dir/rule
 
 # fast build rule for target.
 crossfilter_js_remove/fast:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_remove.dir/build.make test/CMakeFiles/crossfilter_js_remove.dir/build
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_remove.dir/build.make test/CMakeFiles/crossfilter_js_remove.dir/build
 .PHONY : crossfilter_js_remove/fast
 
 # Convenience name for target.
 test/CMakeFiles/crossfilter_js_iterables.dir/rule:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/crossfilter_js_iterables.dir/rule
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/crossfilter_js_iterables.dir/rule
 .PHONY : test/CMakeFiles/crossfilter_js_iterables.dir/rule
 
 # Convenience name for target.
@@ -178,12 +178,12 @@ crossfilter_js_iterables: test/CMakeFiles/crossfilter_js_iterables.dir/rule
 
 # fast build rule for target.
 crossfilter_js_iterables/fast:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_iterables.dir/build.make test/CMakeFiles/crossfilter_js_iterables.dir/build
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_iterables.dir/build.make test/CMakeFiles/crossfilter_js_iterables.dir/build
 .PHONY : crossfilter_js_iterables/fast
 
 # Convenience name for target.
 test/CMakeFiles/mtest.dir/rule:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/mtest.dir/rule
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/mtest.dir/rule
 .PHONY : test/CMakeFiles/mtest.dir/rule
 
 # Convenience name for target.
@@ -193,12 +193,12 @@ mtest: test/CMakeFiles/mtest.dir/rule
 
 # fast build rule for target.
 mtest/fast:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/mtest.dir/build.make test/CMakeFiles/mtest.dir/build
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/mtest.dir/build.make test/CMakeFiles/mtest.dir/build
 .PHONY : mtest/fast
 
 # Convenience name for target.
 test/CMakeFiles/bitarray_test.dir/rule:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/bitarray_test.dir/rule
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/bitarray_test.dir/rule
 .PHONY : test/CMakeFiles/bitarray_test.dir/rule
 
 # Convenience name for target.
@@ -208,7 +208,7 @@ bitarray_test: test/CMakeFiles/bitarray_test.dir/rule
 
 # fast build rule for target.
 bitarray_test/fast:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/bitarray_test.dir/build.make test/CMakeFiles/bitarray_test.dir/build
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/bitarray_test.dir/build.make test/CMakeFiles/bitarray_test.dir/build
 .PHONY : bitarray_test/fast
 
 bitarray_test.o: bitarray_test.cpp.o
@@ -217,7 +217,7 @@ bitarray_test.o: bitarray_test.cpp.o
 
 # target to build an object file
 bitarray_test.cpp.o:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/bitarray_test.dir/build.make test/CMakeFiles/bitarray_test.dir/bitarray_test.cpp.o
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/bitarray_test.dir/build.make test/CMakeFiles/bitarray_test.dir/bitarray_test.cpp.o
 .PHONY : bitarray_test.cpp.o
 
 bitarray_test.i: bitarray_test.cpp.i
@@ -226,7 +226,7 @@ bitarray_test.i: bitarray_test.cpp.i
 
 # target to preprocess a source file
 bitarray_test.cpp.i:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/bitarray_test.dir/build.make test/CMakeFiles/bitarray_test.dir/bitarray_test.cpp.i
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/bitarray_test.dir/build.make test/CMakeFiles/bitarray_test.dir/bitarray_test.cpp.i
 .PHONY : bitarray_test.cpp.i
 
 bitarray_test.s: bitarray_test.cpp.s
@@ -235,7 +235,7 @@ bitarray_test.s: bitarray_test.cpp.s
 
 # target to generate assembly for a file
 bitarray_test.cpp.s:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/bitarray_test.dir/build.make test/CMakeFiles/bitarray_test.dir/bitarray_test.cpp.s
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/bitarray_test.dir/build.make test/CMakeFiles/bitarray_test.dir/bitarray_test.cpp.s
 .PHONY : bitarray_test.cpp.s
 
 crossfilter_js_iterables.o: crossfilter_js_iterables.cpp.o
@@ -244,7 +244,7 @@ crossfilter_js_iterables.o: crossfilter_js_iterables.cpp.o
 
 # target to build an object file
 crossfilter_js_iterables.cpp.o:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_iterables.dir/build.make test/CMakeFiles/crossfilter_js_iterables.dir/crossfilter_js_iterables.cpp.o
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_iterables.dir/build.make test/CMakeFiles/crossfilter_js_iterables.dir/crossfilter_js_iterables.cpp.o
 .PHONY : crossfilter_js_iterables.cpp.o
 
 crossfilter_js_iterables.i: crossfilter_js_iterables.cpp.i
@@ -253,7 +253,7 @@ crossfilter_js_iterables.i: crossfilter_js_iterables.cpp.i
 
 # target to preprocess a source file
 crossfilter_js_iterables.cpp.i:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_iterables.dir/build.make test/CMakeFiles/crossfilter_js_iterables.dir/crossfilter_js_iterables.cpp.i
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_iterables.dir/build.make test/CMakeFiles/crossfilter_js_iterables.dir/crossfilter_js_iterables.cpp.i
 .PHONY : crossfilter_js_iterables.cpp.i
 
 crossfilter_js_iterables.s: crossfilter_js_iterables.cpp.s
@@ -262,7 +262,7 @@ crossfilter_js_iterables.s: crossfilter_js_iterables.cpp.s
 
 # target to generate assembly for a file
 crossfilter_js_iterables.cpp.s:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_iterables.dir/build.make test/CMakeFiles/crossfilter_js_iterables.dir/crossfilter_js_iterables.cpp.s
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_iterables.dir/build.make test/CMakeFiles/crossfilter_js_iterables.dir/crossfilter_js_iterables.cpp.s
 .PHONY : crossfilter_js_iterables.cpp.s
 
 crossfilter_js_remove.o: crossfilter_js_remove.cpp.o
@@ -271,7 +271,7 @@ crossfilter_js_remove.o: crossfilter_js_remove.cpp.o
 
 # target to build an object file
 crossfilter_js_remove.cpp.o:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_remove.dir/build.make test/CMakeFiles/crossfilter_js_remove.dir/crossfilter_js_remove.cpp.o
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_remove.dir/build.make test/CMakeFiles/crossfilter_js_remove.dir/crossfilter_js_remove.cpp.o
 .PHONY : crossfilter_js_remove.cpp.o
 
 crossfilter_js_remove.i: crossfilter_js_remove.cpp.i
@@ -280,7 +280,7 @@ crossfilter_js_remove.i: crossfilter_js_remove.cpp.i
 
 # target to preprocess a source file
 crossfilter_js_remove.cpp.i:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_remove.dir/build.make test/CMakeFiles/crossfilter_js_remove.dir/crossfilter_js_remove.cpp.i
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_remove.dir/build.make test/CMakeFiles/crossfilter_js_remove.dir/crossfilter_js_remove.cpp.i
 .PHONY : crossfilter_js_remove.cpp.i
 
 crossfilter_js_remove.s: crossfilter_js_remove.cpp.s
@@ -289,7 +289,7 @@ crossfilter_js_remove.s: crossfilter_js_remove.cpp.s
 
 # target to generate assembly for a file
 crossfilter_js_remove.cpp.s:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_remove.dir/build.make test/CMakeFiles/crossfilter_js_remove.dir/crossfilter_js_remove.cpp.s
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_remove.dir/build.make test/CMakeFiles/crossfilter_js_remove.dir/crossfilter_js_remove.cpp.s
 .PHONY : crossfilter_js_remove.cpp.s
 
 crossfilter_js_test.o: crossfilter_js_test.cpp.o
@@ -298,7 +298,7 @@ crossfilter_js_test.o: crossfilter_js_test.cpp.o
 
 # target to build an object file
 crossfilter_js_test.cpp.o:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_test.dir/build.make test/CMakeFiles/crossfilter_js_test.dir/crossfilter_js_test.cpp.o
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_test.dir/build.make test/CMakeFiles/crossfilter_js_test.dir/crossfilter_js_test.cpp.o
 .PHONY : crossfilter_js_test.cpp.o
 
 crossfilter_js_test.i: crossfilter_js_test.cpp.i
@@ -307,7 +307,7 @@ crossfilter_js_test.i: crossfilter_js_test.cpp.i
 
 # target to preprocess a source file
 crossfilter_js_test.cpp.i:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_test.dir/build.make test/CMakeFiles/crossfilter_js_test.dir/crossfilter_js_test.cpp.i
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_test.dir/build.make test/CMakeFiles/crossfilter_js_test.dir/crossfilter_js_test.cpp.i
 .PHONY : crossfilter_js_test.cpp.i
 
 crossfilter_js_test.s: crossfilter_js_test.cpp.s
@@ -316,7 +316,7 @@ crossfilter_js_test.s: crossfilter_js_test.cpp.s
 
 # target to generate assembly for a file
 crossfilter_js_test.cpp.s:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_test.dir/build.make test/CMakeFiles/crossfilter_js_test.dir/crossfilter_js_test.cpp.s
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_js_test.dir/build.make test/CMakeFiles/crossfilter_js_test.dir/crossfilter_js_test.cpp.s
 .PHONY : crossfilter_js_test.cpp.s
 
 crossfilter_test.o: crossfilter_test.cpp.o
@@ -325,7 +325,7 @@ crossfilter_test.o: crossfilter_test.cpp.o
 
 # target to build an object file
 crossfilter_test.cpp.o:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_test.dir/build.make test/CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.o
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_test.dir/build.make test/CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.o
 .PHONY : crossfilter_test.cpp.o
 
 crossfilter_test.i: crossfilter_test.cpp.i
@@ -334,7 +334,7 @@ crossfilter_test.i: crossfilter_test.cpp.i
 
 # target to preprocess a source file
 crossfilter_test.cpp.i:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_test.dir/build.make test/CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.i
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_test.dir/build.make test/CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.i
 .PHONY : crossfilter_test.cpp.i
 
 crossfilter_test.s: crossfilter_test.cpp.s
@@ -343,7 +343,7 @@ crossfilter_test.s: crossfilter_test.cpp.s
 
 # target to generate assembly for a file
 crossfilter_test.cpp.s:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/crossfilter_test.dir/build.make test/CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.s
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/crossfilter_test.dir/build.make test/CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.s
 .PHONY : crossfilter_test.cpp.s
 
 mtest.o: mtest.cpp.o
@@ -352,7 +352,7 @@ mtest.o: mtest.cpp.o
 
 # target to build an object file
 mtest.cpp.o:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/mtest.dir/build.make test/CMakeFiles/mtest.dir/mtest.cpp.o
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/mtest.dir/build.make test/CMakeFiles/mtest.dir/mtest.cpp.o
 .PHONY : mtest.cpp.o
 
 mtest.i: mtest.cpp.i
@@ -361,7 +361,7 @@ mtest.i: mtest.cpp.i
 
 # target to preprocess a source file
 mtest.cpp.i:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/mtest.dir/build.make test/CMakeFiles/mtest.dir/mtest.cpp.i
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/mtest.dir/build.make test/CMakeFiles/mtest.dir/mtest.cpp.i
 .PHONY : mtest.cpp.i
 
 mtest.s: mtest.cpp.s
@@ -370,7 +370,7 @@ mtest.s: mtest.cpp.s
 
 # target to generate assembly for a file
 mtest.cpp.s:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(MAKE) -f test/CMakeFiles/mtest.dir/build.make test/CMakeFiles/mtest.dir/mtest.cpp.s
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(MAKE) -f test/CMakeFiles/mtest.dir/build.make test/CMakeFiles/mtest.dir/mtest.cpp.s
 .PHONY : mtest.cpp.s
 
 # Help Target
@@ -417,6 +417,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

@@ -6,5 +6,5 @@ CXX_FLAGS =  -fno-omit-frame-pointer -Wall -Wextra -Werror -g -pthread -std=c++1
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/Users/michaelwelsch/Downloads/cppcrossfilter_210518/include -I/Users/michaelwelsch/Downloads/cppcrossfilter_210518/3dparty -I/Users/michaelwelsch/Downloads/cppcrossfilter_210518/3dparty/nod-0.4.1/include -I/usr/local/include 
+CXX_INCLUDES = -I/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/include -I/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/3dparty -I/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/3dparty/nod-0.4.1/include -I/usr/local/include 
 

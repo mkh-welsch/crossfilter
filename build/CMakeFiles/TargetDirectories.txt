@@ -1,0 +1,16 @@
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/CMakeFiles/rebuild_cache.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/CMakeFiles/edit_cache.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/CMakeFiles/test.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/benchmark/CMakeFiles/rebuild_cache.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/benchmark/CMakeFiles/edit_cache.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/benchmark/CMakeFiles/test.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/benchmark/CMakeFiles/benchmark1.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test/CMakeFiles/edit_cache.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test/CMakeFiles/crossfilter_js_test.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test/CMakeFiles/crossfilter_test.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test/CMakeFiles/rebuild_cache.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test/CMakeFiles/crossfilter_js_remove.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test/CMakeFiles/test.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test/CMakeFiles/crossfilter_js_iterables.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test/CMakeFiles/mtest.dir
+/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test/CMakeFiles/bitarray_test.dir

@@ -1,4 +1,4 @@
-# Install script for directory: /Users/michaelwelsch/Downloads/cppcrossfilter_210518/test
+# Install script for directory: /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/test
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

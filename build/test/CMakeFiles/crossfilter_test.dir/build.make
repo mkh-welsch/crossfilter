@@ -43,10 +43,10 @@ RM = /Applications/CMake.app/Contents/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/michaelwelsch/Downloads/cppcrossfilter_210518
+CMAKE_SOURCE_DIR = /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build
+CMAKE_BINARY_DIR = /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build
 
 # Include any dependencies generated for this target.
 include test/CMakeFiles/crossfilter_test.dir/depend.make
@@ -59,16 +59,16 @@ include test/CMakeFiles/crossfilter_test.dir/flags.make
 
 test/CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.o: test/CMakeFiles/crossfilter_test.dir/flags.make
 test/CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.o: ../test/crossfilter_test.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/michaelwelsch/Downloads/cppcrossfilter_210518/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object test/CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.o"
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build/test && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.o -c /Users/michaelwelsch/Downloads/cppcrossfilter_210518/test/crossfilter_test.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object test/CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.o"
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.o -c /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/test/crossfilter_test.cpp
 
 test/CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.i"
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build/test && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/michaelwelsch/Downloads/cppcrossfilter_210518/test/crossfilter_test.cpp > CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.i
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/test/crossfilter_test.cpp > CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.i
 
 test/CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.s"
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build/test && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/michaelwelsch/Downloads/cppcrossfilter_210518/test/crossfilter_test.cpp -o CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.s
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test && /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/test/crossfilter_test.cpp -o CMakeFiles/crossfilter_test.dir/crossfilter_test.cpp.s
 
 # Object files for target crossfilter_test
 crossfilter_test_OBJECTS = \
@@ -81,8 +81,8 @@ crossfilter_test_EXTERNAL_OBJECTS =
 ../test/testBin/crossfilter_test: test/CMakeFiles/crossfilter_test.dir/build.make
 ../test/testBin/crossfilter_test: /usr/local/lib/libboost_unit_test_framework-mt.dylib
 ../test/testBin/crossfilter_test: test/CMakeFiles/crossfilter_test.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/michaelwelsch/Downloads/cppcrossfilter_210518/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable ../../test/testBin/crossfilter_test"
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build/test && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/crossfilter_test.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable ../../test/testBin/crossfilter_test"
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/crossfilter_test.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 test/CMakeFiles/crossfilter_test.dir/build: ../test/testBin/crossfilter_test
@@ -90,10 +90,10 @@ test/CMakeFiles/crossfilter_test.dir/build: ../test/testBin/crossfilter_test
 .PHONY : test/CMakeFiles/crossfilter_test.dir/build
 
 test/CMakeFiles/crossfilter_test.dir/clean:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build/test && $(CMAKE_COMMAND) -P CMakeFiles/crossfilter_test.dir/cmake_clean.cmake
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test && $(CMAKE_COMMAND) -P CMakeFiles/crossfilter_test.dir/cmake_clean.cmake
 .PHONY : test/CMakeFiles/crossfilter_test.dir/clean
 
 test/CMakeFiles/crossfilter_test.dir/depend:
-	cd /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /Users/michaelwelsch/Downloads/cppcrossfilter_210518 /Users/michaelwelsch/Downloads/cppcrossfilter_210518/test /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build/test /Users/michaelwelsch/Downloads/cppcrossfilter_210518/build/test/CMakeFiles/crossfilter_test.dir/DependInfo.cmake --color=$(COLOR)
+	cd /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/test /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test /Users/michaelwelsch/Documents/SignalEmpoweringTechnology/crossfilter/build/test/CMakeFiles/crossfilter_test.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : test/CMakeFiles/crossfilter_test.dir/depend
 
