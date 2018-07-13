@@ -33,24 +33,24 @@ BOOST_TEST_DONT_PRINT_LOG_VALUE(RecIterable)
 BOOST_AUTO_TEST_SUITE(crossfilter_remove)
 BOOST_AUTO_TEST_CASE(removing_record_works_for_a_group_with_cardinality_one) {
   
-  CrossFilter<Rec3> data;
+  cross::filter<Rec3> data;
   auto foo = data.dimension([](auto d) { return d.foo; });
-  auto div2 = foo.group([](auto value) { return std::floor(value / 2); });
-  auto positive = foo.group([](auto value) { return value > 0; });
+  auto div2 = foo.feature_count([](auto value) { return std::floor(value / 2); });
+  auto positive = foo.feature_count([](auto value) { return value > 0; });
 
   data.add(std::vector<Rec3>{{1}, {1.1}, {1.2}});
   foo.filter(1.1);
   data.remove();
-  foo.filterAll();
+  foo.filter_all();
   data.remove();
   BOOST_TEST(foo.top(Infinity).empty());
 }
 BOOST_AUTO_TEST_CASE(removing_record_works_for_another_group_with_cardinality_one) {
 
-  CrossFilter<Rec3> data;
+  cross::filter<Rec3> data;
   auto foo = data.dimension([](auto d) { return d.foo; });
-  auto div2 = foo.group([](auto value) { return std::floor(value / 2); });
-  auto positive = foo.group([](auto value) { return value > 0; });
+  auto div2 = foo.feature_count([](auto value) { return std::floor(value / 2); });
+  auto positive = foo.feature_count([](auto value) { return value > 0; });
 
   data.add(std::vector<Rec3>{{0}, {-1}});
 
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(removing_record_works_for_another_group_with_cardinality_on
   foo.filter(0);
   data.remove();
   BOOST_TEST(positive.all() == (std::vector<std::pair<bool,std::size_t>>{{false, 1}}), boost::test_tools::per_element());
-  foo.filterAll();
+  foo.filter_all();
   auto top = foo.top(Infinity);
   BOOST_TEST(top.size() == (unsigned long)1);
   if(!top.empty()) {
@@ -69,16 +69,16 @@ BOOST_AUTO_TEST_CASE(removing_record_works_for_another_group_with_cardinality_on
   BOOST_TEST(foo.top(Infinity).empty());
 }
 BOOST_AUTO_TEST_CASE(removing_record_updates_dimension) {
-  CrossFilter<Rec3> data;
+  cross::filter<Rec3> data;
   auto foo = data.dimension([](auto d) { return d.foo; });
-  auto div2 = foo.group([](auto value) { return std::floor(value / 2); });
-  auto positive = foo.group([](auto value) { return value > 0; });
+  auto div2 = foo.feature_count([](auto value) { return std::floor(value / 2); });
+  auto positive = foo.feature_count([](auto value) { return value > 0; });
 
   data.add(std::vector<Rec3>{{1}, {2}});
 
-  foo.filterExact(1);
+  foo.filter_exact(1);
   data.remove();
-  foo.filterAll();
+  foo.filter_all();
   auto top1 = foo.top(Infinity);
   BOOST_TEST(top1.size() == (unsigned long)1);
   if(!top1.empty()) {
@@ -89,10 +89,10 @@ BOOST_AUTO_TEST_CASE(removing_record_updates_dimension) {
   BOOST_TEST(foo.top(Infinity).empty());
 }
 BOOST_AUTO_TEST_CASE(removing_records_updates_group) {
-  CrossFilter<Rec3> data;
+  cross::filter<Rec3> data;
   auto foo = data.dimension([](auto d) { return d.foo; });
-  auto div2 = foo.group([](auto value) { return std::floor(value / 2); });
-  auto positive = foo.group([](auto value) { return value > 0; });
+  auto div2 = foo.feature_count([](auto value) { return std::floor(value / 2); });
+  auto positive = foo.feature_count([](auto value) { return value > 0; });
 
   data.add(std::vector<Rec3>{{1}, {2}, {3}});
 
@@ -102,9 +102,9 @@ BOOST_AUTO_TEST_CASE(removing_records_updates_group) {
 
   BOOST_TEST(div2.all() == (std::vector<std::pair<double,std::size_t>>{{0, 1},{1,2}}), boost::test_tools::per_element());
 
-  foo.filterRange(1, 3);
+  foo.filter_range(1, 3);
   data.remove();
-  foo.filterAll();
+  foo.filter_all();
 
   BOOST_TEST(foo.top(Infinity) == (std::vector<Rec3>{
         {3 }
@@ -116,15 +116,15 @@ BOOST_AUTO_TEST_CASE(removing_records_updates_group) {
 }
 
 BOOST_AUTO_TEST_CASE(filtering_works_correctly_after_removing_record) {
-  CrossFilter<Rec3> data;
+  cross::filter<Rec3> data;
   auto foo = data.dimension([](auto d) { return d.foo; });
-  auto div2 = foo.group([](auto value) { return std::floor(value / 2); });
-  auto positive = foo.group([](auto value) { return value > 0; });
+  auto div2 = foo.feature_count([](auto value) { return std::floor(value / 2); });
+  auto positive = foo.feature_count([](auto value) { return value > 0; });
 
   data.add(std::vector<Rec3>{{1}, {2}, {3}});
   foo.filter(2);
   data.remove();
-  foo.filterAll();
+  foo.filter_all();
   BOOST_TEST(foo.top(Infinity) == (std::vector<Rec3>{
         {3}, {1}
       }), boost::test_tools::per_element());
@@ -136,10 +136,10 @@ BOOST_AUTO_TEST_SUITE_END();
 
 BOOST_AUTO_TEST_SUITE(remove_with_predicate)
 BOOST_AUTO_TEST_CASE(removing_record_workd_with_group_cardinality_one) {
-  CrossFilter<Rec3> data;
+  cross::filter<Rec3> data;
   auto foo = data.dimension([](auto d) { return d.foo; });
-  auto div2 = foo.group([](auto value) { return std::floor(value / 2); });
-  auto positive = foo.group([](auto value) { return value > 0; });
+  auto div2 = foo.feature_count([](auto value) { return std::floor(value / 2); });
+  auto positive = foo.feature_count([](auto value) { return value > 0; });
 
 
   data.add(std::vector<Rec3>{{1}, {1.1}, {1.2}});
@@ -157,10 +157,10 @@ BOOST_AUTO_TEST_CASE(removing_record_workd_with_group_cardinality_one) {
 }
 
 BOOST_AUTO_TEST_CASE(removing_record_works_for_another_group_with_cardinality_one) {
-  CrossFilter<Rec3> data;
+  cross::filter<Rec3> data;
   auto foo = data.dimension([](auto d) { return d.foo; });
-  auto div2 = foo.group([](auto value) { return std::floor(value / 2); });
-  auto positive = foo.group([](auto value) { return value > 0; });
+  auto div2 = foo.feature_count([](auto value) { return std::floor(value / 2); });
+  auto positive = foo.feature_count([](auto value) { return value > 0; });
 
   data.add(std::vector<Rec3>{{0}, {-1}});
 
@@ -176,10 +176,10 @@ BOOST_AUTO_TEST_CASE(removing_record_works_for_another_group_with_cardinality_on
   BOOST_TEST(foo.top(Infinity).empty());
 }
 BOOST_AUTO_TEST_CASE(removing_record_updates_dimension) {
-  CrossFilter<Rec3> data;
+  cross::filter<Rec3> data;
   auto foo = data.dimension([](auto d) { return d.foo; });
-  auto div2 = foo.group([](auto value) { return std::floor(value / 2); });
-  auto positive = foo.group([](auto value) { return value > 0; });
+  auto div2 = foo.feature_count([](auto value) { return std::floor(value / 2); });
+  auto positive = foo.feature_count([](auto value) { return value > 0; });
 
   data.add(std::vector<Rec3>{{1}, {2}});
 
@@ -193,10 +193,10 @@ BOOST_AUTO_TEST_CASE(removing_record_updates_dimension) {
 }
 
 BOOST_AUTO_TEST_CASE(removing_records_updates_group) {
-  CrossFilter<Rec3> data;
+  cross::filter<Rec3> data;
   auto foo = data.dimension([](auto d) { return d.foo; });
-  auto div2 = foo.group([](auto value) { return std::floor(value / 2); });
-  auto positive = foo.group([](auto value) { return value > 0; });
+  auto div2 = foo.feature_count([](auto value) { return std::floor(value / 2); });
+  auto positive = foo.feature_count([](auto value) { return value > 0; });
 
   data.add(std::vector<Rec3>{{1}, {2}, {3}});
 
@@ -218,11 +218,11 @@ BOOST_AUTO_TEST_CASE(removing_records_updates_group) {
   BOOST_TEST(div2.all().empty());
 }
 BOOST_AUTO_TEST_CASE(can_remove_records_while_filtering) {
-  CrossFilter<Rec3> data;
+  cross::filter<Rec3> data;
   auto foo = data.dimension([](auto d) { return d.foo; });
-  auto div2 = foo.group([](auto value) { return std::floor(value / 2); });
-  auto positive = foo.group([](auto value) { return value > 0; });
-  auto allSum = data.groupAllReduceSum([](auto d) { return d.foo; });
+  auto div2 = foo.feature_count([](auto value) { return std::floor(value / 2); });
+  auto positive = foo.feature_count([](auto value) { return value > 0; });
+  auto allSum = data.feature_sum([](auto d) { return d.foo; });
   data.add(std::vector<Rec3>{{1}, {2}, {3}});
 
   BOOST_CHECK_EQUAL(allSum.value(),6);
@@ -235,19 +235,19 @@ BOOST_AUTO_TEST_CASE(can_remove_records_while_filtering) {
   data.remove([](auto d, int) { return d.foo == 2;});
   BOOST_CHECK_EQUAL(allSum.value(),0);
 
-  foo.filterAll();
+  foo.filter_all();
   BOOST_CHECK_EQUAL(allSum.value(),1);
   data.remove([](auto,int) { return true;});
   BOOST_TEST(foo.top(Infinity).empty());
 }
 
 BOOST_AUTO_TEST_CASE(can_remove_records_while_filtering_on_iterable_dimension) {
-  CrossFilter<RecIterable> data;
+  cross::filter<RecIterable> data;
 
-  auto fooDimension = data.iterableDimension([](auto d) { return d.foo;});
-  auto fooGroup = fooDimension.group();
-  auto allBarSum = data.groupAllReduceSum([](auto d) { return d.bar;});
-  auto fooBarSum = fooDimension.groupReduceSum([](auto d) { return d.bar;});
+  auto fooDimension = data.iterable_dimension([](auto d) { return d.foo;});
+  auto fooGroup = fooDimension.feature_count();
+  auto allBarSum = data.feature_sum([](auto d) { return d.bar;});
+  auto fooBarSum = fooDimension.feature_sum([](auto d) { return d.bar;});
 
   data.add(std::vector<RecIterable>{
       {std::vector<int>{1,2,3},1},
@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE(can_remove_records_while_filtering_on_iterable_dimension) {
         {  3,  4 }
       }), boost::test_tools::per_element());
 
-  fooDimension.filterAll();
+  fooDimension.filter_all();
   BOOST_CHECK_EQUAL(allBarSum.value(), 4);
   data.remove([] (auto, int) {
       return true;

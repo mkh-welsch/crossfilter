@@ -42,6 +42,6 @@ using connection = boost::signals2::connection;
 
 #include "detail/crossfilter.hpp"
 #include "detail/dimension.hpp"
-#include "detail/group.hpp"
+#include "detail/feature.hpp"
 
 #endif

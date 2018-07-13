@@ -15,14 +15,14 @@ BOOST_AUTO_TEST_CASE (constructor_test) {
 BOOST_AUTO_TEST_CASE(resize_test) {
   BitArray ba;
   ba.resize(2);
-  BOOST_CHECK_EQUAL(ba.getIndexSize(),(unsigned long)2);
+  BOOST_CHECK_EQUAL(ba.get_index_size(),(unsigned long)2);
 }
 
 BOOST_AUTO_TEST_CASE(add_row_to_empty_test) {
   BitArray ba;
-  auto r = ba.addRow();
+  auto r = ba.add_row();
 
-  auto newMask = ba.getMask(std::get<0>(r));
+  auto newMask = ba.get_mask(std::get<0>(r));
   int bitIndex = std::get<1>(r);
   std::cout << std::get<0>(r) << ',' << std::get<1>(r) << ',' << newMask << std::endl;
   
@@ -34,8 +34,8 @@ BOOST_AUTO_TEST_CASE(add_row_to_empty_test) {
 
 BOOST_AUTO_TEST_CASE(add_row_test) {
   BitArray ba;
-  ba.addRow();
-  BOOST_CHECK_EQUAL(std::bitset<8>(ba.getMask(0))[0],1);
-  ba.addRow();
-  BOOST_CHECK_EQUAL(std::bitset<8>(ba.getMask(0))[1],1);
+  ba.add_row();
+  BOOST_CHECK_EQUAL(std::bitset<8>(ba.get_mask(0))[0],1);
+  ba.add_row();
+  BOOST_CHECK_EQUAL(std::bitset<8>(ba.get_mask(0))[1],1);
 }

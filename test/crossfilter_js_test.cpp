@@ -1,5 +1,3 @@
-// This is an independent project of an individual developer. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE mtest
 #include "utils.hpp"
@@ -17,13 +15,13 @@
 auto Infinity = std::numeric_limits<int>::max();
 
 struct Fixture {
-  CrossFilter<Record> cr;
-  Dimension<std::string,Record,false> date;
-  Dimension<int,Record,false> quantity;
-  Dimension<int,Record,false> total;
-  Dimension<int,Record,false> tip;
-  Dimension<std::string,Record,false> type;
-  //  Dimension<int,CrossFilterImpl<Record>,true> tags;
+  cross::filter<Record> cr;
+  cross::dimension<std::string,Record,false> date;
+  cross::dimension<int,Record,false> quantity;
+  cross::dimension<int,Record,false> total;
+  cross::dimension<int,Record,false> tip;
+  cross::dimension<std::string,Record,false> type;
+  //  dimension<int,cross::filterImpl<Record>,true> tags;
   Fixture() {
     Record data[] = {
       {"2011-11-14T16:17:54Z", 2,  190,  100,  "tab",  {1,2,3}},
@@ -80,9 +78,9 @@ struct Fixture {
 };
 
 struct Fixture2 : public Fixture {
-  Group<std::size_t,std::size_t,Dimension<int,Record,false>,true> count;
+  cross::feature<std::size_t,std::size_t,cross::dimension<int,Record,false>,true> count;
   Fixture2()
-      :Fixture(),count(quantity.groupAllReduceCount()) {
+      :Fixture(),count(quantity.feature_all_count()) {
   }
   
 };
@@ -91,12 +89,12 @@ struct Fixture2 : public Fixture {
 
 BOOST_AUTO_TEST_SUITE(crossfilter)
 BOOST_AUTO_TEST_CASE(up_to_32_dimension_support_test) {
-  CrossFilter<Record> data;
+  cross::filter<Record> data;
   for(int i = 0;i < 32; i++) data.dimension([](const Record &) { return 0;});
 }
 BOOST_AUTO_TEST_CASE(add_and_remove_32_diension_repeatedly_test) {
-  CrossFilter<Record> data;
-  using Dim = CrossFilter<Record>::dimension_t<int>; 
+  cross::filter<Record> data;
+  using Dim = cross::filter<Record>::dimension_t<int>; 
   
   std::list<Dim> dimensions;
   for (int j = 0; j < 10; j++) {
@@ -111,15 +109,15 @@ BOOST_AUTO_TEST_CASE(add_and_remove_32_diension_repeatedly_test) {
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(empty_data)
-BOOST_AUTO_TEST_CASE(groupAll_value_test) {
-  CrossFilter<Record> cf;
-  auto g = cf.groupAll();
+BOOST_AUTO_TEST_CASE(feature_all_count_value_test) {
+  cross::filter<Record> cf;
+  auto g = cf.feature_count();
   BOOST_CHECK_EQUAL(g.value(),(unsigned long)0);
 }
 
-BOOST_AUTO_TEST_CASE(groupAll_value_after_removing_all_data) {
-  CrossFilter<Record> cf;
-  auto g = cf.groupAll();
+BOOST_AUTO_TEST_CASE(feature_all_value_after_removing_all_data) {
+  cross::filter<Record> cf;
+  auto g = cf.feature_count();
   BOOST_CHECK_EQUAL(g.value(),(unsigned long)0);
   
   cf.add({"",1,100,1,"",{}});
@@ -130,16 +128,16 @@ BOOST_AUTO_TEST_CASE(groupAll_value_after_removing_all_data) {
   
 }
 BOOST_AUTO_TEST_CASE(dimension_groupall_count_default_value) {
-  CrossFilter<Record> data;
+  cross::filter<Record> data;
   auto quantity = data.dimension([](auto r) {return r.quantity;});
-  auto count = quantity.groupAllReduceCount();
+  auto count = quantity.feature_all_count();
   BOOST_CHECK_EQUAL(count.value(),(unsigned long)0);
 }
 
 BOOST_AUTO_TEST_CASE(dimension_groupall_count_value_after_removing_all_data) {
-  CrossFilter<Record> data;
+  cross::filter<Record> data;
   auto quantity = data.dimension([](auto r) {return r.quantity;});
-  auto count = quantity.groupAllReduceCount();
+  auto count = quantity.feature_all_count();
   BOOST_CHECK_EQUAL(count.value(),(unsigned long)0);
   data.add({"",1,100,1,"",{}});
   BOOST_CHECK_EQUAL(count.value(),(unsigned long)1);
@@ -148,10 +146,10 @@ BOOST_AUTO_TEST_CASE(dimension_groupall_count_value_after_removing_all_data) {
 }
 
 BOOST_AUTO_TEST_CASE(dimension_groupall_sum) {
-  CrossFilter<Record> data;
+  cross::filter<Record> data;
   auto quantity = data.dimension([](auto r) {return r.quantity;});
-  auto count = quantity.groupAllReduceCount();
-  auto total = quantity.groupAllReduceSum([](auto r) { return r.total;});
+  auto count = quantity.feature_all_count();
+  auto total = quantity.feature_all_sum([](auto r) { return r.total;});
   BOOST_CHECK_EQUAL(total.value(),0);
   data.add({"",1,190,1,"",{}});
   BOOST_CHECK_EQUAL(total.value(),190);
@@ -159,14 +157,14 @@ BOOST_AUTO_TEST_CASE(dimension_groupall_sum) {
   BOOST_CHECK_EQUAL(total.value(),0);
 }
 BOOST_AUTO_TEST_CASE(dimension_groupall_custom_reduce) {
-  CrossFilter<Record> data;
+  cross::filter<Record> data;
   auto quantity = data.dimension([](auto r) {return r.quantity;});
-  //  auto count = quantity.groupAllReduceCount();
-  //  auto total = quantity.groupAllReduceSum([](auto r) { return r.total;});
-  auto custom = quantity.groupAll<int>([](auto v, auto, bool ) {return v + 1;},
-                                       [](auto v, auto, bool ) {return v - 1;},
-                                       [](){ return int(1);}
-                                       );
+  //  auto count = quantity.feature_all_count(();
+  //  auto total = quantity.feature_all_sum(([](auto r) { return r.total;});
+  auto custom = quantity.feature_all([](auto v, auto, bool ) {return v + 1;},
+                                     [](auto v, auto, bool ) {return v - 1;},
+                                     [](){ return int(1);}
+                                     );
   
   BOOST_CHECK_EQUAL(custom.value(),1);
   data.add({"",2,190,1,"",{}});
@@ -180,24 +178,24 @@ BOOST_AUTO_TEST_CASE(dimension_groupall_custom_reduce) {
 BOOST_AUTO_TEST_CASE(dimension_groupall_custom_reduce_information_lifecycle) {
   struct Rec2 {int foo; int val;};
   Rec2 vec[] = {{1,2},{2,2},{3,2},{3,2}};
-  CrossFilter<Rec2> data;
+  cross::filter<Rec2> data;
   data.add(vec);
   auto foo = data.dimension([](auto r) { return r.foo;});
   auto bar = data.dimension([](auto r) { return r.foo;});
   auto val = data.dimension([](auto r) { return r.val;});
-  auto groupMax = bar.groupAll<int>([](auto v, auto r, bool n) {if(n) {v+= r.val;} return v;},
+  auto groupMax = bar.feature_all([](auto v, auto r, bool n) {if(n) {v+= r.val;} return v;},
                                     [](auto v, auto r, bool n) {if(n) {v-=r.val;} return v;},
                                     [](){ return int(0);});
-  auto groupSum = bar.groupAllReduceSum([](auto r) { return r.val;});
+  auto groupSum = bar.feature_all_sum([](auto r) { return r.val;});
 
   // on group creation
   BOOST_CHECK_EQUAL(groupMax.value(),groupSum.value());
 
   // on filtering
-  foo.filterRange(1,3);
+  foo.filter_range(1,3);
   BOOST_CHECK_EQUAL(groupMax.value(),8);
   BOOST_CHECK_EQUAL(groupSum.value(),4);
-  foo.filterAll();
+  foo.filter_all();
 
   // on adding data after group creation
   data.add({1,2});
@@ -206,29 +204,29 @@ BOOST_AUTO_TEST_CASE(dimension_groupall_custom_reduce_information_lifecycle) {
   BOOST_CHECK_EQUAL(groupMax.value(),groupSum.value());
 
   // on adding data when a filter is in place
-  foo.filterRange(1,3);
+  foo.filter_range(1,3);
   data.add({3,1});
   BOOST_CHECK_EQUAL(groupMax.value(),11);
   BOOST_CHECK_EQUAL(groupSum.value(),6);
-  foo.filterAll();
+  foo.filter_all();
 
   // on removing data after group creation
-  val.filterExact(1);
+  val.filter_exact(1);
   data.remove();
   BOOST_CHECK_EQUAL(groupMax.value(),10);
   BOOST_CHECK_EQUAL(groupSum.value(),0);
-  val.filterAll();
+  val.filter_all();
   BOOST_CHECK_EQUAL(groupMax.value(),groupSum.value());
 }
 
 BOOST_AUTO_TEST_CASE(up_to_64_duimension_support) {
-  CrossFilter<Record> cf;
-  CrossFilter<Record> data;
+  cross::filter<Record> cf;
+  cross::filter<Record> data;
   for(int i = 0;i < 64; i++) data.dimension([](const Record &) { return 0;});
 }
 BOOST_AUTO_TEST_CASE(add_and_remove_32_diension_repeatedly_test) {
-  CrossFilter<Record> data;
-  using Dim = CrossFilter<Record>::dimension_t<int>; 
+  cross::filter<Record> data;
+  using Dim = cross::filter<Record>::dimension_t<int>; 
   
   std::list<Dim> dimensions;
   for (int j = 0; j < 10; j++) {
@@ -246,8 +244,8 @@ BOOST_AUTO_TEST_CASE(filtering_with_more_than_32_dimensions) {
   struct Rec2 {
     int value;
     };
-  CrossFilter<Rec2> data;
-  using Dim = CrossFilter<Rec2>::dimension_t<bool>; 
+  cross::filter<Rec2> data;
+  using Dim = cross::filter<Rec2>::dimension_t<bool>; 
   std::vector<Dim> dims;
   for(int i = 0; i < 50; i++) {
     data.add({i});
@@ -259,9 +257,9 @@ BOOST_AUTO_TEST_CASE(filtering_with_more_than_32_dimensions) {
 
 
   for(int i = 0; i < 50; i++) {
-    dims[i].filterExact(true);
+    dims[i].filter_exact(true);
     data.remove();
-    dims[i].filterAll();
+    dims[i].filter_all();
     BOOST_CHECK_EQUAL(data.size(), (unsigned long)(49-i));
   }
 }
@@ -310,18 +308,18 @@ BOOST_AUTO_TEST_CASE(dimension_top_test) {
 
   //  "observes the associated dimension's filters": function(data) {
   {
-    data.quantity.filterExact(4);
+    data.quantity.filter_exact(4);
     std::vector<Record> test = {
       {"2011-11-14T21:18:48Z",  4, 270, 0,  "tab", {1,2,3 }}
     };
     auto top = data.total.top(3);
     
     BOOST_CHECK_EQUAL(top, test);
-    data.quantity.filterAll();
+    data.quantity.filter_all();
   }
   
   {
-    data.date.filterRange("2011-11-14T19:00:00Z","2011-11-14T20:00:00Z");
+    data.date.filter_range("2011-11-14T19:00:00Z","2011-11-14T20:00:00Z");
     std::vector<Record> test = {
       { "2011-11-14T19:30:44Z",  2,  90,  0,  "tab", {1,3}},
       { "2011-11-14T19:04:22Z",  2,  90,  0,  "tab", {1,2,3}},
@@ -345,7 +343,7 @@ BOOST_AUTO_TEST_CASE(dimension_top_test) {
       { "2011-11-14T19:00:31Z",  2,  190,  100,  "tab", {2,3,4}}
     };
     
-    data.date.filterRange("2011-11-14T19:00:00Z","2011-11-14T20:00:00Z"); // also comparable
+    data.date.filter_range("2011-11-14T19:00:00Z","2011-11-14T20:00:00Z"); // also comparable
     BOOST_CHECK_EQUAL(data.date.top(10),test);
   }
   {
@@ -356,12 +354,12 @@ BOOST_AUTO_TEST_CASE(dimension_top_test) {
     BOOST_CHECK_EQUAL(data.date.top(10, 2), test);
   }
   
-  data.date.filterAll();
+  data.date.filter_all();
 
   // "observes other dimensions' filters"
 
   {
-    data.type.filterExact("tab");
+    data.type.filter_exact("tab");
     std::vector<Record> test = {
       { "2011-11-14T20:49:07Z",  2,  290,  200,  "tab", {2,4,5}},
       { "2011-11-14T21:18:48Z",  4,  270,  0,  "tab", {1,2,3}}
@@ -384,20 +382,20 @@ BOOST_AUTO_TEST_CASE(dimension_top_test) {
     std::vector<Record> test = {
       { "2011-11-14T16:28:54Z",  1,  300,  200,  "visa", {2,4,5}}
     };
-    data.type.filterExact("visa");
+    data.type.filter_exact("visa");
     BOOST_CHECK_EQUAL(data.total.top(1), test);
   }
   {
     std::vector<Record> test = {
       { "2011-11-14T17:38:40Z",  2,  200,  100,  "visa", {2,4,5}}
     };
-    data.quantity.filterExact(2);
+    data.quantity.filter_exact(2);
     BOOST_CHECK_EQUAL(data.tip.top(1), test);
   }
-  data.type.filterAll();
-  data.quantity.filterAll();
+  data.type.filter_all();
+  data.quantity.filter_all();
 
-  data.type.filterExact("tab");
+  data.type.filter_exact("tab");
   {
     std::vector<Record> test = {{
         { "2011-11-14T23:28:54Z",  2,  190,  100,  "tab", {1,2,3}},
@@ -413,7 +411,7 @@ BOOST_AUTO_TEST_CASE(dimension_top_test) {
         BOOST_CHECK_EQUAL(data.date.top(2, 8),test);
   }
   
-  data.type.filterExact("visa");
+  data.type.filter_exact("visa");
   {
     std::vector<Record> test ={
         { "2011-11-14T23:16:09Z",  1,  200,  100,  "visa", {2,4,5}}
@@ -422,7 +420,7 @@ BOOST_AUTO_TEST_CASE(dimension_top_test) {
     BOOST_CHECK_EQUAL(data.date.top(1),test);
   }
   
-  data.quantity.filterExact(2);
+  data.quantity.filter_exact(2);
   {
     std::vector<Record> test = {
       { "2011-11-14T22:58:54Z",  2,  100,  0,  "visa", {2,3,4}}
@@ -430,8 +428,8 @@ BOOST_AUTO_TEST_CASE(dimension_top_test) {
     BOOST_CHECK_EQUAL(data.date.top(1), test);
   }
 
-  data.type.filterAll();
-  data.quantity.filterAll();
+  data.type.filter_all();
+  data.quantity.filter_all();
   // "negative or zero k returns an empty array": function(data) {
   std::vector<Record> empty ;
   
@@ -497,7 +495,7 @@ BOOST_AUTO_TEST_CASE(dimension_bottom_test) {
   }
 
   // observes the associated dimension's filters
-  data.quantity.filterExact(4);
+  data.quantity.filter_exact(4);
   {
     V test =
         {
@@ -506,7 +504,7 @@ BOOST_AUTO_TEST_CASE(dimension_bottom_test) {
     auto b = data.total.bottom(3);
     BOOST_CHECK_EQUAL(data.total.bottom(3), test);
   }
-  data.quantity.filterAll();
+  data.quantity.filter_all();
 
   {
     V t = {
@@ -514,35 +512,35 @@ BOOST_AUTO_TEST_CASE(dimension_bottom_test) {
       { "2011-11-14T19:04:22Z",  2,  90,  0,  "tab", {1,2,3}},
       { "2011-11-14T19:30:44Z",  2,  90,  0,  "tab", {1,3}}
     };
-    data.date.filterRange("2011-11-14T19:00:00Z","2011-11-14T20:00:00Z");
+    data.date.filter_range("2011-11-14T19:00:00Z","2011-11-14T20:00:00Z");
     BOOST_CHECK_EQUAL(data.date.bottom(10),t);
   }
   BOOST_CHECK_EQUAL(data.date.bottom(10, 2), (V {{ "2011-11-14T19:30:44Z",  2,  90,  0,  "tab", {1,3}}}));
-  data.date.filterAll();
+  data.date.filter_all();
   
   // observes other dimensions' filters
-  data.type.filterExact("tab");
+  data.type.filter_exact("tab");
   BOOST_CHECK_EQUAL(data.total.bottom(2), (V {
               { "2011-11-14T22:30:22Z",  2,  89,  0,  "tab", {1,3}},
               { "2011-11-14T16:30:43Z",  2,  90,  0,  "tab", {2,3,4}}
       }));
-  data.type.filterExact("tab");
+  data.type.filter_exact("tab");
   BOOST_CHECK_EQUAL(data.total.bottom(2, 8), (V {
         { "2011-11-14T17:52:02Z",  2,  90,  0,  "tab", {2,3,4}},
         { "2011-11-14T18:45:24Z",  2,  90,  0,  "tab", {2,4,5}}
       }));
-  data.type.filterExact("visa");
+  data.type.filter_exact("visa");
   BOOST_CHECK_EQUAL(data.total.bottom(1), (V {
         { "2011-11-14T22:58:54Z",  2,  100,  0,  "visa", {2,3,4}}
       }));
-  data.quantity.filterExact(2);
+  data.quantity.filter_exact(2);
   BOOST_CHECK_EQUAL(data.tip.bottom(1), (V {
         { "2011-11-14T22:58:54Z",  2,  100,  0,  "visa", {2,3,4}}
       }));
-  data.type.filterAll();
-  data.quantity.filterAll();
+  data.type.filter_all();
+  data.quantity.filter_all();
 
-  data.type.filterExact("tab");
+  data.type.filter_exact("tab");
   BOOST_CHECK_EQUAL(data.date.bottom(2), (V {
         { "2011-11-14T16:17:54Z",  2,  190,  100,  "tab", {1,2,3}},
         { "2011-11-14T16:20:19Z",  2,  190,  100,  "tab", {1,3}}
@@ -551,16 +549,16 @@ BOOST_AUTO_TEST_CASE(dimension_bottom_test) {
         { "2011-11-14T17:33:46Z",  2,  190,  100,  "tab", {1,2,3}},
         { "2011-11-14T17:33:59Z",  2,  90,  0,  "tab", {1,3}}
       }));
-  data.type.filterExact("visa");
+  data.type.filter_exact("visa");
   BOOST_CHECK_EQUAL(data.date.bottom(1), (V {
         { "2011-11-14T16:28:54Z",  1,  300,  200,  "visa", {2,4,5}}
       }));
-  data.quantity.filterExact(2);
+  data.quantity.filter_exact(2);
   BOOST_CHECK_EQUAL(data.date.bottom(1), (V {
         { "2011-11-14T17:38:40Z",  2,  200,  100,  "visa", {2,4,5}}
       }));
-  data.type.filterAll();
-  data.quantity.filterAll();
+  data.type.filter_all();
+  data.quantity.filter_all();
 
   // negative or zero k returns an empty array
   BOOST_CHECK_EQUAL(data.quantity.bottom(0), V());
@@ -582,44 +580,44 @@ BOOST_AUTO_TEST_CASE(dimension_bottom_test) {
 
 }
 
-BOOST_AUTO_TEST_CASE(dimension_filterExact_test) {
+BOOST_AUTO_TEST_CASE(dimension_filter_exact_test) {
   Fixture data;
   using V = std::vector<Record>;
   //  selects records that match the specified value exactly
-  data.tip.filterExact(100);
+  data.tip.filter_exact(100);
   BOOST_CHECK_EQUAL(data.date.top(2), (V {
           { "2011-11-14T23:28:54Z",  2,  190,  100,  "tab", {1,2,3}},
           { "2011-11-14T23:23:29Z",  2,  190,  100,  "tab", {2,3,4}}
                                           }));
-  data.tip.filterAll();
+  data.tip.filter_all();
   // "allows the filter value to be null
-  data.tip.filterExact(0); // equivalent to 0 by natural ordering
+  data.tip.filter_exact(0); // equivalent to 0 by natural ordering
   BOOST_CHECK_EQUAL(data.date.top(2), (V {
               { "2011-11-14T22:58:54Z",  2,  100,  0,  "visa", {2,3,4}},
               { "2011-11-14T22:48:05Z",  2,  91,  0,  "tab", {2,4,5}}
       }));
-  data.tip.filterAll();
+  data.tip.filter_all();
 }
 
-BOOST_AUTO_TEST_CASE(dimension_filterRange_test) {
+BOOST_AUTO_TEST_CASE(dimension_filter_range_test) {
   Fixture data;
   //using V = std::vector<Record>;
 
   //  selects records greater than or equal to the inclusive lower bound
-  data.total.filterRange(100, 190);
+  data.total.filter_range(100, 190);
   auto top = data.date.top(std::numeric_limits<int64_t>::max());
   for(auto & v : top) {
     BOOST_CHECK(v.total >= 100);
   }
   
-  data.total.filterRange(110, 190);
+  data.total.filter_range(110, 190);
   auto top2 = data.date.top(std::numeric_limits<int64_t>::max());
   for(auto & v : top2) {
     BOOST_CHECK(v.total >= 110);
   }
-  data.total.filterAll();
+  data.total.filter_all();
   //"selects records less than the exclusive lower bound": function(data) {
-  data.total.filterRange(100, 200);
+  data.total.filter_range(100, 200);
   {
     auto top = data.date.top(std::numeric_limits<int64_t>::max());
     for(auto & v : top) {
@@ -627,32 +625,32 @@ BOOST_AUTO_TEST_CASE(dimension_filterRange_test) {
     }
   }
   {
-    data.total.filterRange(100, 190);
+    data.total.filter_range(100, 190);
     auto top = data.date.top(std::numeric_limits<int64_t>::max());
     for(auto & v : top) {
       BOOST_CHECK(v.total < 190);
     }
   }
-  data.total.filterAll();
+  data.total.filter_all();
 }
 
-BOOST_AUTO_TEST_CASE(dimension_filterAll_test) {
+BOOST_AUTO_TEST_CASE(dimension_filter_all_test) {
   Fixture data;
   
   // clears the filter
-  data.total.filterRange(100, 200);
+  data.total.filter_range(100, 200);
   BOOST_CHECK(data.date.top(std::numeric_limits<int64_t>::max()).size() < 43);
-  data.total.filterAll();
+  data.total.filter_all();
   BOOST_CHECK_EQUAL(data.date.top(std::numeric_limits<int64_t>::max()).size(), (unsigned long)43);
 }
 
-BOOST_AUTO_TEST_CASE(dimension_filterFunction1_test) {
+BOOST_AUTO_TEST_CASE(dimension_filter_function1_test) {
   Fixture data;
   //  auto Infinity = std::numeric_limits<int>::max();
 
   // selects records according to an arbitrary function
 
-  data.total.filterFunction( [](auto d) { return d % 2; });
+  data.total.filter_function( [](auto d) { return d % 2; });
   {
     auto top = data.date.top(std::numeric_limits<int64_t>::max());
     for(auto & v : top) {
@@ -660,63 +658,63 @@ BOOST_AUTO_TEST_CASE(dimension_filterFunction1_test) {
     }
   }
   
-  data.total.filterAll();
+  data.total.filter_all();
 }
-BOOST_AUTO_TEST_CASE(dimension_filterFunction2_test) {
+BOOST_AUTO_TEST_CASE(dimension_filter_function2_test) {
   Fixture data;
   auto Infinity = std::numeric_limits<int>::max();
 
   {
     // respects truthy values
-    auto  group = data.quantity.groupAllReduceCount();
-    data.total.filterRange(0, Infinity);
-    data.total.filterFunction([](auto ) { return 1; });
+    auto  group = data.quantity.feature_all_count();
+    data.total.filter_range(0, Infinity);
+    data.total.filter_function([](auto ) { return 1; });
     BOOST_CHECK_EQUAL(group.value(), (unsigned long)43);
-    data.total.filterFunction([](auto ) { return 0; });
+    data.total.filter_function([](auto ) { return 0; });
     BOOST_CHECK_EQUAL(group.value(), (unsigned long)0);
-    data.total.filterAll();
+    data.total.filter_all();
   }
 }
-BOOST_AUTO_TEST_CASE(dimension_filterFunction3_test) {
+BOOST_AUTO_TEST_CASE(dimension_filter_function3_test) {
   Fixture data;
   //  auto Infinity = std::numeric_limits<int>::max();
 
   // "groups on the first dimension are updated correctly
   {
-    auto  group = data.date.groupAllReduceCount();
-    data.total.filterFunction([](auto d) { return d == 90; });
+    auto  group = data.date.feature_all_count();
+    data.total.filter_function([](auto d) { return d == 90; });
 
     BOOST_CHECK_EQUAL(group.value(), (unsigned long)13);
-    data.total.filterFunction([](auto d) { return d == 91; });
+    data.total.filter_function([](auto d) { return d == 91; });
     auto t = group.value();
     BOOST_CHECK_EQUAL(t, (unsigned long)1);
-    data.total.filterAll();
+    data.total.filter_all();
   }
 }
 
-BOOST_AUTO_TEST_CASE(dimension_filterFunction4_test) {
+BOOST_AUTO_TEST_CASE(dimension_filter_function4_test) {
   Fixture data;
   auto Infinity = std::numeric_limits<int>::max();
-  // followed by filterRange
-  data.total.filterFunction([]( auto d) { return d % 2; });
-  data.total.filterRange(100, 200);
+  // followed by filter_range
+  data.total.filter_function([]( auto d) { return d % 2; });
+  data.total.filter_range(100, 200);
   auto t = data.date.top(Infinity);
   BOOST_CHECK_EQUAL(data.date.top(Infinity).size(), (unsigned long)19);
-  data.total.filterAll();
+  data.total.filter_all();
 }
 
 BOOST_AUTO_TEST_CASE(filter_test) {
   Fixture data;
 
-  // is equivalent to filterRange 
+  // is equivalent to filter_range 
     data.total.filter(100, 190);
     auto top = data.date.top(Infinity);
     
     BOOST_CHECK(std::all_of(top.begin(),top.end(),[](auto d) { return d.total >= 100; }));
-    data.total.filterAll();
+    data.total.filter_all();
 
 
-    // is equivalent to filterExact when passed a single value
+    // is equivalent to filter_exact when passed a single value
     {
       data.total.filter(100);
       auto top = data.date.top(Infinity);
@@ -724,14 +722,14 @@ BOOST_AUTO_TEST_CASE(filter_test) {
       BOOST_CHECK(std::all_of(top.begin(),top.end(),[](auto d) { return d.total == 100; }));
     }
     
-    data.total.filterAll();
-    // is equivalent to filterFunction when passed a function
+    data.total.filter_all();
+    // is equivalent to filter_function when passed a function
     {
       data.total.filter([](auto d) { return d % 2; });
       auto top = data.date.top(Infinity);
       BOOST_CHECK(std::all_of(top.begin(),top.end(),[](auto d) { return d.total % 2; }));
     }
-    // is equivalent to filterAll when passed none
+    // is equivalent to filter_all when passed none
     data.total.filter(100, 200);
     BOOST_CHECK(data.date.top(Infinity).size() < 43);
     data.total.filter();
@@ -742,7 +740,7 @@ BOOST_AUTO_TEST_CASE(group_all_count_the_default_test) {
   Fixture data;
   // reduces by add, remove, and initial
 
-  auto count =  data.quantity.groupAll<std::size_t>(
+  auto count =  data.quantity.feature_all(
       [](auto p, auto v, bool) { return p + v.total; },
       [](auto p, auto v, bool) { return p - v.total; },
       []() { return std::size_t(0); });
@@ -750,62 +748,62 @@ BOOST_AUTO_TEST_CASE(group_all_count_the_default_test) {
 
   {
     // reduces by count
-    auto g1 = data.quantity.groupAllReduceSum([](auto d) { return d.total; });
+    auto g1 = data.quantity.feature_all_sum([](auto d) { return d.total; });
     BOOST_CHECK_EQUAL(g1.value(), 6660);
-    auto g2 = data.quantity.groupAllReduceCount();
+    auto g2 = data.quantity.feature_all_count();
     BOOST_CHECK_EQUAL(g2.value(), (unsigned long)43);
   }
 
   {
     // reduces by sum of accessor function
-    auto g1 = data.quantity.groupAllReduceSum([](auto d) { return d.total; });
+    auto g1 = data.quantity.feature_all_sum([](auto d) { return d.total; });
     BOOST_CHECK_EQUAL(g1.value(), 6660);
-    auto g2 = data.quantity.groupAllReduceSum([](auto) { return 1; });
+    auto g2 = data.quantity.feature_all_sum([](auto) { return 1; });
     BOOST_CHECK_EQUAL(g2.value(),43);
   }
   {
     // does not observe the associated dimension's filters
-    auto g = data.quantity.groupAllReduceCount();
-    data.quantity.filterRange(100, 200);
+    auto g = data.quantity.feature_all_count();
+    data.quantity.filter_range(100, 200);
     BOOST_CHECK_EQUAL(g.value(), (unsigned long)43);
-    data.quantity.filterAll();
+    data.quantity.filter_all();
   }
   {
     //  observes other dimensions' filters
-    auto g = data.quantity.groupAllReduceCount();
-    data.type.filterExact("tab");
+    auto g = data.quantity.feature_all_count();
+    data.type.filter_exact("tab");
     BOOST_CHECK_EQUAL(g.value(), (unsigned long)32);
-    data.type.filterExact("visa");
+    data.type.filter_exact("visa");
     BOOST_CHECK_EQUAL(g.value(), (unsigned long)7);
-    data.tip.filterExact(100);
+    data.tip.filter_exact(100);
     BOOST_CHECK_EQUAL(g.value(), (unsigned long)5);
-    data.type.filterAll();
-    data.tip.filterAll();
+    data.type.filter_all();
+    data.tip.filter_all();
   }
 }
-BOOST_AUTO_TEST_CASE(groupAll_dispose_test) {
+BOOST_AUTO_TEST_CASE(feature_all_dispose_test) {
   //  detaches from reduce listeners
 
   {
-  CrossFilter<int> data(std::vector<int>{0, 1, 2});
+  cross::filter<int> data(std::vector<int>{0, 1, 2});
   bool callback = false; // indicates a reduce has occurred in this group
   auto dimension = data.dimension([](auto d) { return d; });
   auto other = data.dimension([](auto d) { return d; });
-  auto all = dimension.groupAll<int>(
+  auto all = dimension.feature_all(
       [&callback](auto, auto, bool) { callback = true; return 0;},
       [&callback](auto,auto, bool) { callback = true; return 0;},
       []() {return 0;});
     all.value(); // force this group to be reduced when filters change
     callback = false;
     all.dispose();
-    other.filterRange(1, 2);
+    other.filter_range(1, 2);
     BOOST_CHECK(!callback);
   }
   {
-    CrossFilter<int> data(std::vector<int>{0, 1, 2});
+    cross::filter<int> data(std::vector<int>{0, 1, 2});
     bool callback = false; // indicates data has been added and trigered a reduce
     auto dimension = data.dimension([](auto d) { return d; });
-    auto all = dimension.groupAll<int>(
+    auto all = dimension.feature_all(
         [&callback](auto, auto, bool) { callback = true; return 0;},
         [&callback](auto,auto, bool) { callback = true; return 0;},
         []() {return 0;});
@@ -824,39 +822,39 @@ BOOST_AUTO_TEST_CASE(group_all_sum_test) {
 
   // determines the computed reduce value
   {
-  auto total = data.quantity.groupAll<int>(
+  auto total = data.quantity.feature_all(
       [](auto p, auto, bool) { return p + 1; },
       [](auto p, auto, bool) { return p - 1; },
       []() { return 0; });
   BOOST_CHECK_EQUAL(total.value(), 43);
   }
 
-  auto total = data.quantity.groupAllReduceSum([](auto r) {return r.total; });
+  auto total = data.quantity.feature_all_sum([](auto r) {return r.total; });
   // returns the sum total of matching records
   BOOST_CHECK_EQUAL(total.value(), 6660);
   // does not observe the associated dimension's filters
-  data.quantity.filterRange(100, 200);
+  data.quantity.filter_range(100, 200);
   BOOST_CHECK_EQUAL(total.value(), 6660);
-  data.quantity.filterAll();
+  data.quantity.filter_all();
 
   // observes other dimensions' filters
-  data.type.filterExact("tab");
+  data.type.filter_exact("tab");
   BOOST_CHECK_EQUAL(total.value(), 4760);
-  data.type.filterExact("visa");
+  data.type.filter_exact("visa");
   BOOST_CHECK_EQUAL(total.value(), 1400);
-  data.tip.filterExact(100);
+  data.tip.filter_exact(100);
   BOOST_CHECK_EQUAL(total.value(), 1000);
-  data.type.filterAll();
-  data.tip.filterAll();
+  data.type.filter_all();
+  data.tip.filter_all();
 }
 
 
 BOOST_AUTO_TEST_CASE(group_gkey_defaults_value) {
   Fixture data;
   
-  auto hours = data.date.group([](auto d) {
+  auto hours = data.date.feature_count([](auto d) {
       auto dt = d;  dt[14] = dt[15] = dt[17] = dt[18] = '0';return dt; });
-  auto types = data.type.group();
+  auto types = data.type.feature_count();
   auto Infinity  = std::numeric_limits<int64_t>::max();
   
   // key defaults to value
@@ -876,10 +874,10 @@ BOOST_AUTO_TEST_CASE(group_cardinality_may_be_greater_than_256_test) {
   std::iota(v.begin(),v.end(),0);
   v.push_back(256);
   v.push_back(256);
-  CrossFilter<int> data(v);
+  cross::filter<int> data(v);
   
   auto index = data.dimension([](auto d) { return d; });
-  auto indexes = index.group();
+  auto indexes = index.feature_count();
   auto top1 = index.top(2);
   std::vector<int> test1 = {256, 256};
   auto top2 = indexes.top(1);
@@ -894,10 +892,10 @@ BOOST_AUTO_TEST_CASE(group_cardinality_may_be_greater_than_65536_test) {
   std::iota(v.begin(),v.end(),0);
   v.push_back(65536);
   v.push_back(65536);
-  CrossFilter<int> data(v);
+  cross::filter<int> data(v);
   
   auto index = data.dimension([](auto d) { return d; });
-  auto indexes = index.group();
+  auto indexes = index.feature_count();
   auto top1 = index.top(2);
   std::vector<int> test1 = {65536, 65536};
   auto top2 = indexes.top(1);
@@ -912,7 +910,7 @@ BOOST_AUTO_TEST_CASE(group_adds_all_records_before_removing_filtered_test) {
   
   data.quantity.filter(1);
   // Group only adds
-  auto addGroup = data.type.group(
+  auto addGroup = data.type.feature(
       [](auto p, auto, bool ) {
         ++p;
         return p;
@@ -925,29 +923,29 @@ BOOST_AUTO_TEST_CASE(group_adds_all_records_before_removing_filtered_test) {
       }
                                        );
   // Normal group
-  auto stdGroup = data.type.group();
+  auto stdGroup = data.type.feature_count();
   BOOST_CHECK(addGroup.top(1)[0].second > std::size_t(stdGroup.top(1)[0].second));
-  data.quantity.filterAll();
+  data.quantity.filter_all();
 
 }
 BOOST_AUTO_TEST_CASE(group_size_test) {
   Fixture data;
   
-  auto hours = data.date.group([](auto d) {
+  auto hours = data.date.feature_count([](auto d) {
       auto dt = d;  dt[14] = dt[15] = dt[17] = dt[18] = '0';return dt; });
-  auto types = data.type.group();
+  auto types = data.type.feature_count();
 
   // returns the cardinality
   BOOST_CHECK_EQUAL(hours.size(), (unsigned long)8);
   BOOST_CHECK_EQUAL(types.size(), (unsigned long)3);
 
   // ignores any filters
-  data.type.filterExact("tab");
-  data.quantity.filterRange(100, 200);
+  data.type.filter_exact("tab");
+  data.quantity.filter_range(100, 200);
   BOOST_CHECK_EQUAL(hours.size(), (unsigned long)8);
   BOOST_CHECK_EQUAL(types.size(), (unsigned long)3);
-  data.quantity.filterAll();
-  data.type.filterAll();
+  data.quantity.filter_all();
+  data.type.filter_all();
 
 }
 
@@ -956,13 +954,13 @@ BOOST_AUTO_TEST_CASE(group_reduce_test) {
   auto hours_key = [](auto d) {
     auto dt = d;  dt[14] = dt[15] = dt[17] = dt[18] = '0';return dt; };
   
-  auto hours = data.date.group(hours_key);
-  auto types = data.type.group();
+  auto hours = data.date.feature_count(hours_key);
+  auto types = data.type.feature_count();
   // defaults to count
   BOOST_CHECK_EQUAL(hours.top(1)[0], (std::pair<std::string, std::size_t>("2011-11-14T17:00:00Z",9)));
 
   // determines the computed reduce value
-  auto hours_sum = data.date.groupReduceSum([](auto d) 
+  auto hours_sum = data.date.feature_sum([](auto d) 
                                             {return d.total;
                                             }, hours_key);
   BOOST_CHECK_EQUAL(hours_sum.top(1)[0], (std::pair<std::string, int>("2011-11-14T17:00:00Z",1240)));
@@ -973,12 +971,12 @@ BOOST_AUTO_TEST_CASE(group_reduce2_test) {
     int val;
   };
   
-  CrossFilter<Rec2> data;
+  cross::filter<Rec2> data;
   data.add(std::vector<Rec2>{{ 1,  2}, { 2,  2}, { 3,  2}, { 3,  2}});
   auto foo = data.dimension([](auto d) { return d.foo; });
   auto bar = data.dimension([](auto d) { return d.foo; });
   auto val = data.dimension([](auto d) { return d.val; });
-  auto groupMax = bar.group([](auto p,auto v, bool n){
+  auto groupMax = bar.feature([](auto p,auto v, bool n){
       if(n) {
         p += v.val;
       }
@@ -993,14 +991,14 @@ BOOST_AUTO_TEST_CASE(group_reduce2_test) {
     []() {
       return 0;
     });
-  auto groupSum = bar.groupReduceSum([](auto d) { return d.val; });
+  auto groupSum = bar.feature_sum([](auto d) { return d.val; });
 
   // gives reduce functions information on lifecycle of data element
   // on group creation
   BOOST_CHECK_EQUAL(groupMax.all(), groupSum.all());
 
   // on filtering
-  foo.filterRange(1, 3);
+  foo.filter_range(1, 3);
   {
     auto groupMaxAll =groupMax.all();
     auto groupSumAll = groupSum.all();
@@ -1011,7 +1009,7 @@ BOOST_AUTO_TEST_CASE(group_reduce2_test) {
     BOOST_CHECK(check_collections_equal(groupSumAll,t2));
   }
   
-  foo.filterAll();
+  foo.filter_all();
 
   // on adding data after group creation
   data.add({1, 2});
@@ -1023,7 +1021,7 @@ BOOST_AUTO_TEST_CASE(group_reduce2_test) {
   std::cout << std::endl;
 
   // on adding data when a filter is in place
-  foo.filterRange(1,3);
+  foo.filter_range(1,3);
   data.add({ 3, 1});
   t = groupMax.all();
   std::cout << "groupMax2=";
@@ -1036,7 +1034,7 @@ BOOST_AUTO_TEST_CASE(group_reduce2_test) {
   
   BOOST_TEST(groupSum.all() == (std::vector<std::pair<int,int>>{{ 1,4 }, { 2, 2 }, { 3, 0 }}), boost::test_tools::per_element()); 
 
-  foo.filterAll();
+  foo.filter_all();
   
   // on removing data after group creation
   val.filter(1);
@@ -1044,7 +1042,7 @@ BOOST_AUTO_TEST_CASE(group_reduce2_test) {
   BOOST_TEST(groupMax.all() == (std::vector<std::pair<int,int>>{{1,4 },{ 2,2 },{ 3,4 }}),boost::test_tools::per_element());
   BOOST_TEST(groupSum.all() ==  (std::vector<std::pair<int,int>>{{1,0 },{ 2,0 },{ 3,0 }}),boost::test_tools::per_element());
 
-  val.filterAll();
+  val.filter_all();
   BOOST_TEST(groupMax.all() ==  groupSum.all(),boost::test_tools::per_element());
 
 }
@@ -1059,7 +1057,7 @@ BOOST_AUTO_TEST_CASE(group_top_test) {
     return y*1000000 + m*10000 + d*100 + h;
 };
 
-  auto hours = data.date.group(hours_key);
+  auto hours = data.date.feature_count(hours_key);
   // returns the top k groups by reduce value, in descending order
   BOOST_TEST(hours.top(3) == (std::vector<std::pair<std::size_t,std::size_t>>{{2011111417,9},
         {2011111416,7},
@@ -1086,7 +1084,7 @@ BOOST_AUTO_TEST_CASE(group_order_test) {
     return y*1000000 + m*10000 + d*100 + h;
   };
 
-  auto hours = data.date.group(hours_key);
+  auto hours = data.date.feature_count(hours_key);
   
   //  defaults to the identity function
   BOOST_TEST(hours.top(1) == (std::vector<std::pair<std::size_t,std::size_t>>{
@@ -1095,7 +1093,7 @@ BOOST_AUTO_TEST_CASE(group_order_test) {
 
   // is useful in conjunction with a compound reduce value
   
-  auto hours2 = data.date.group(
+  auto hours2 = data.date.feature(
       [](CompoundReduce & p, auto v, bool) { ++p.count; p.total += v.total; return p; },
       [](CompoundReduce & p, auto v, bool) { --p.count; p.total -= v.total; return p; },
       []() { return CompoundReduce{0, 0}; }, hours_key);
@@ -1113,28 +1111,28 @@ BOOST_AUTO_TEST_CASE(group_dispose_test) {
   {
     
    //   "detaches from reduce listeners"
-    CrossFilter<int> data(std::vector<int>{0, 1, 2});
+    cross::filter<int> data(std::vector<int>{0, 1, 2});
     bool callback = false; // indicates a reduce has occurred in this group
     auto dimension = data.dimension([](auto d) { return d; });
     auto other = data.dimension([](auto d) { return d; });
-    auto group = dimension.group(
+    auto group = dimension.feature(
         [&callback](int&, const int&, bool) { callback = true; return 0;},
         [&callback](int&, const int&, bool) { callback = true; return 0;},
         []() {return 0;});
     group.all(); // force this group to be reduced when filters change
     callback = false;
     group.dispose();
-    other.filterRange(1, 2);
+    other.filter_range(1, 2);
     BOOST_TEST(callback == false);
   }
 
   {
     // detaches from add listeners
-    CrossFilter<int> data(std::vector<int>{0, 1, 2});
+    cross::filter<int> data(std::vector<int>{0, 1, 2});
     bool callback = false; // indicates data has been added and the group has been reduced
     auto dimension = data.dimension([](auto d) { return d; });
     auto other = data.dimension([](auto d) { return d; });
-    auto group = dimension.group(
+    auto group = dimension.feature(
         [&callback](auto, auto, auto) { callback = true; return 0;},
         [&callback](auto, auto, auto) { callback = true; return 0;},
         []() {return 0;});
@@ -1150,7 +1148,7 @@ BOOST_AUTO_TEST_CASE(dispose_test) {
 
   {
   // detaches from add listeners
-    CrossFilter<int> data(std::vector<int>{0, 1, 2});
+    cross::filter<int> data(std::vector<int>{0, 1, 2});
     bool callback = false; // indicates a reduce has occurred in this group
     auto dimension = data.dimension([&callback](auto d) { callback = true; return d; });
     callback = false;
@@ -1160,11 +1158,11 @@ BOOST_AUTO_TEST_CASE(dispose_test) {
   }
   {  
     // "detaches groups from reduce listeners": function() {
-    CrossFilter<int> data(std::vector<int>{0, 1, 2});
+    cross::filter<int> data(std::vector<int>{0, 1, 2});
     bool callback = false;// indicates a reduce has occurred in this group
     auto dimension = data.dimension([](auto d) { return d; });
     auto other = data.dimension([](auto d) { return d; });
-    auto group = dimension.group(
+    auto group = dimension.feature(
         [&callback](auto, auto, auto) { callback = true; return 0;},
         [&callback](auto, auto, auto) { callback = true; return 0;},
         []() {return 0;});
@@ -1173,17 +1171,17 @@ BOOST_AUTO_TEST_CASE(dispose_test) {
     callback = false;
     dimension.dispose();
    
-    other.filterRange(1, 2);
+    other.filter_range(1, 2);
     BOOST_TEST(callback == false);
   }
 
   {
     // "detaches groups from add listeners": function() {
-    CrossFilter<int> data(std::vector<int>{0, 1, 2});
+    cross::filter<int> data(std::vector<int>{0, 1, 2});
     bool callback = false; // indicates data has been added and the group has been reduced
     auto dimension = data.dimension([](auto d) { return d; });
     auto other = data.dimension([](auto d) { return d; });
-    auto group = dimension.group(
+    auto group = dimension.feature(
         [&callback](auto, auto, auto) { callback = true; return 0;},
         [&callback](auto, auto, auto) { callback = true; return 0;},
         []() {return 0;});
@@ -1195,13 +1193,13 @@ BOOST_AUTO_TEST_CASE(dispose_test) {
   }
   {
   // "clears dimension filters from groups": function() {
-    CrossFilter<int> data(std::vector<int>{0, 0, 2, 2});
+    cross::filter<int> data(std::vector<int>{0, 0, 2, 2});
     auto d1 = data.dimension([](auto d) { return -d; });
     auto d2 = data.dimension([](auto d) { return +d; });
-    auto g2 = d2.group([](auto d) { return int(std::round( d / 2.0 ) * 2); });
+    auto g2 = d2.feature_count([](auto d) { return int(std::round( d / 2.0 ) * 2); });
     auto all = g2.all();
 
-    d1.filterRange(-1, 1); // a filter is present when the dimension is disposed
+    d1.filter_range(-1, 1); // a filter is present when the dimension is disposed
 
     d1.dispose();
 
@@ -1210,93 +1208,93 @@ BOOST_AUTO_TEST_CASE(dispose_test) {
   }
 }
 
-BOOST_AUTO_TEST_CASE(groupAll_determines_the_computed_reduce_value) {
+BOOST_AUTO_TEST_CASE(feature_all_determines_the_computed_reduce_value) {
   Fixture data;
-  auto allGrouped = data.cr.groupAllReduceCount();
+  auto allGrouped = data.cr.feature_count();
   BOOST_CHECK_EQUAL(allGrouped.value(), (unsigned long)43);
 }
 
-BOOST_AUTO_TEST_CASE(groupAll_gives_reduce_functions_information_on_lifecycle_of_data_element) {
+BOOST_AUTO_TEST_CASE(feature_all_gives_reduce_functions_information_on_lifecycle_of_data_element) {
   struct Rec2{
     int foo;
     int val;
   };
   
   Rec2 vec[] = {{1,2},{2,2},{3,2},{3,2}};
-  CrossFilter<Rec2> data;
+  cross::filter<Rec2> data;
   data.add(vec);
   auto foo = data.dimension([](auto r) { return r.foo;});
   auto bar = data.dimension([](auto r) { return r.foo;});
   auto val = data.dimension([](auto r) { return r.val;});
-  auto groupMax = bar.groupAll<int>([](auto v, auto r, bool n) {if(n) {v+= r.val;} return v;},
-                                    [](auto v, auto r, bool n) {if(n) {v-=r.val;} return v;},
-                                    [](){ return int(0);});
-  auto groupSum = bar.groupAllReduceSum([](auto r) { return r.val;});
+  auto groupMax = bar.feature_all([](auto v, auto r, bool n) {if(n) {v+= r.val;} return v;},
+                                  [](auto v, auto r, bool n) {if(n) {v-=r.val;} return v;},
+                                  [](){ return int(0);});
+  auto groupSum = bar.feature_all_sum([](auto r) { return r.val;});
 
   // on group creation
   BOOST_CHECK_EQUAL(groupMax.value(),groupSum.value());
 
   // on filtering
-  foo.filterRange(1,3);
+  foo.filter_range(1,3);
   BOOST_CHECK_EQUAL(groupMax.value(),8);
   BOOST_CHECK_EQUAL(groupSum.value(),4);
-  foo.filterAll();
+  foo.filter_all();
 
   // on adding data after group creation
   data.add({1,2});
   BOOST_CHECK_EQUAL(groupMax.value(),groupSum.value());
 
   // on adding data when filter is in place
-  foo.filterRange(1,3);
+  foo.filter_range(1,3);
   data.add(Rec2{3,1});
   BOOST_CHECK_EQUAL(groupMax.value(),11);
   BOOST_CHECK_EQUAL(groupSum.value(),6);
-  foo.filterAll();
+  foo.filter_all();
 
   // on removing data after group creation
   val.filter(1);
   data.remove();
   BOOST_CHECK_EQUAL(groupMax.value(),10);
   BOOST_CHECK_EQUAL(groupSum.value(),0);
-  val.filterAll();
+  val.filter_all();
   BOOST_CHECK_EQUAL(groupMax.value(), groupSum.value());
 }
-BOOST_AUTO_TEST_CASE(groupAll_crossfilter_value_test) {
+BOOST_AUTO_TEST_CASE(feature_all_crossfilter_value_test) {
   Fixture data;
-  auto allGrouped = data.cr.groupAllReduceSum([](auto d) {return d.total;} );
+  auto allGrouped = data.cr.feature_sum([](auto d) {return d.total;} );
 
   // returns the sum of total of matching record
   BOOST_CHECK_EQUAL(allGrouped.value(),6660);
 
   // observs all dimension's filters
-  data.type.filterExact("tab");
+  data.type.filter_exact("tab");
   BOOST_CHECK_EQUAL(allGrouped.value(), 4760);
-  data.type.filterExact("visa");
+  data.type.filter_exact("visa");
   BOOST_CHECK_EQUAL(allGrouped.value(), 1400);
-  data.tip.filterExact(100);
+  data.tip.filter_exact(100);
   BOOST_CHECK_EQUAL(allGrouped.value(), 1000);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE(crossfilter_groupAll_dispose);
+BOOST_AUTO_TEST_SUITE(crossfilter_feature_all_dispose);
 BOOST_AUTO_TEST_CASE(detaches_from_reduce_listeners) {
-  CrossFilter<int> data(std::vector<int>{0, 1, 2});
+  cross::filter<int> data(std::vector<int>{0, 1, 2});
   bool callback = false;// indicates a reduce has occurred in this group
   auto other = data.dimension([](auto d) { return d; });
-  auto all = data.groupAll(
+  auto all = data.feature(
       [&callback](auto, auto, auto) { callback = true; return 0;},
       [&callback](auto, auto, auto) { callback = true; return 0;},
       []() {return 0;});
   all.value(); // force this group to be reduced when filters change
   callback = false;
   all.dispose();
-  other.filterRange(1, 2);
+  other.filter_range(1, 2);
   BOOST_CHECK_EQUAL(callback,false);
 }
 BOOST_AUTO_TEST_CASE(detaches_from_add_listeners) {
-  CrossFilter<int> data(std::vector<int>{0, 1, 2});
+  cross::filter<int> data(std::vector<int>{0, 1, 2});
   bool callback = false;// indicates a reduce has occurred in this group
-  auto all = data.groupAll(
+  auto all = data.feature(
       [&callback](auto, auto, auto) { callback = true; return 0;},
       [&callback](auto, auto, auto) { callback = true; return 0;},
       []() {return 0;});
@@ -1308,30 +1306,30 @@ BOOST_AUTO_TEST_CASE(detaches_from_add_listeners) {
 }
 
 BOOST_AUTO_TEST_CASE(does_not_detach_other_reduce_listeners) {
-  CrossFilter<int> data(std::vector<int>{0, 1, 2});
+  cross::filter<int> data(std::vector<int>{0, 1, 2});
   bool callback = false;// indicates a reduce has occurred in this group
   auto other = data.dimension([](auto d) { return d; });
-  auto all2 = data.groupAll(
+  auto all2 = data.feature(
       [&callback](auto, auto, auto) { callback = true; return 0;},
       [&callback](auto, auto, auto) { callback = true; return 0;},
       []() {return 0;});
-  auto all = data.groupAll();
+  auto all = data.feature_count();
   
   all2.value(); // force this group to be reduced when filters change
   callback = false;
   all.dispose();
-  other.filterRange(1, 2);
+  other.filter_range(1, 2);
   BOOST_CHECK_EQUAL(callback,true);
 }
 BOOST_AUTO_TEST_CASE(does_not_detach_other_add_listeners) {
-  CrossFilter<int> data(std::vector<int>{0, 1, 2});
+  cross::filter<int> data(std::vector<int>{0, 1, 2});
   bool callback = false;// indicates a reduce has occurred in this group
 
-  auto all2 = data.groupAll(
+  auto all2 = data.feature(
       [&callback](auto, auto, auto) { callback = true; return 0;},
       [&callback](auto, auto, auto) { callback = true; return 0;},
       []() {return 0;});
-  auto all = data.groupAll();
+  auto all = data.feature_count();
   
   all2.value(); // force this group to be reduced when filters change
   callback = false;
@@ -1348,7 +1346,7 @@ BOOST_AUTO_TEST_CASE(returns_the_total_number_of_elements) {
 }
 BOOST_AUTO_TEST_CASE(is_not_affected_by_any_dimension_filters) {
   Fixture data;
-  data.quantity.filterExact(4);
+  data.quantity.filter_exact(4);
   BOOST_CHECK_EQUAL(data.cr.size(),(unsigned long)43);
 }
 BOOST_AUTO_TEST_SUITE_END();
@@ -1361,7 +1359,7 @@ BOOST_AUTO_TEST_CASE(returns_the_full_data_array) {
 }
 BOOST_AUTO_TEST_CASE(is_not_affected_by_any_dimension_filters) {
   Fixture data;
-  data.quantity.filterExact(4);
+  data.quantity.filter_exact(4);
   auto raw = data.cr.all();
   BOOST_CHECK_EQUAL(raw.size(),(unsigned long)43);
 }
@@ -1370,40 +1368,40 @@ BOOST_AUTO_TEST_SUITE_END();
 BOOST_AUTO_TEST_SUITE(crossfilter_allFiltered)
 BOOST_AUTO_TEST_CASE(returns_the_full_data_array_if_no_filters_applied) {
   Fixture data;
-  auto raw = data.cr.allFiltered();
+  auto raw = data.cr.all_filtered();
   BOOST_CHECK_EQUAL(raw.size(),(unsigned long)43);
 }
 
 BOOST_AUTO_TEST_CASE(is_affected_by_all_dimension_filters) {
   Fixture data;
-  data.quantity.filterExact(4);
-  BOOST_CHECK_EQUAL(data.cr.allFiltered().size(), (unsigned long)1);
+  data.quantity.filter_exact(4);
+  BOOST_CHECK_EQUAL(data.cr.all_filtered().size(), (unsigned long)1);
 
-  data.quantity.filterExact(2);
-  BOOST_CHECK_EQUAL(data.cr.allFiltered().size(), (unsigned long)35);
+  data.quantity.filter_exact(2);
+  BOOST_CHECK_EQUAL(data.cr.all_filtered().size(), (unsigned long)35);
 
-  data.total.filterRange(190, 300);
-  BOOST_CHECK_EQUAL(data.cr.allFiltered().size(), (unsigned long)18);
+  data.total.filter_range(190, 300);
+  BOOST_CHECK_EQUAL(data.cr.all_filtered().size(), (unsigned long)18);
 }
 
 BOOST_AUTO_TEST_CASE(is_affected_by_all_dimensions_filters_except_those_in_ignore__dimensions) {
   Fixture data;
-  data.quantity.filterExact(2);
-  auto raw = data.cr.allFiltered(data.quantity);
+  data.quantity.filter_exact(2);
+  auto raw = data.cr.all_filtered(data.quantity);
   BOOST_CHECK_EQUAL(raw.size(), (unsigned long)43);
 
-  data.total.filterRange(190, 300);
-  raw = data.cr.allFiltered(data.total);
+  data.total.filter_range(190, 300);
+  raw = data.cr.all_filtered(data.total);
   BOOST_CHECK_EQUAL(raw.size(), (unsigned long)35);
 
-  raw = data.cr.allFiltered(data.quantity, data.total);
+  raw = data.cr.all_filtered(data.quantity, data.total);
   BOOST_CHECK_EQUAL(raw.size(), (unsigned long)43);
 }
 BOOST_AUTO_TEST_SUITE_END();
 
 BOOST_AUTO_TEST_SUITE(crossfilter_add)
 BOOST_AUTO_TEST_CASE(increase_the_size_of_the_crossfilter) {
-  CrossFilter<int> data;
+  cross::filter<int> data;
   BOOST_CHECK_EQUAL(data.size(),(unsigned long)0);
   data.add(std::vector<int>{0,1,2,3,4,5,6,6,6,7});
   BOOST_CHECK_EQUAL(data.size(),(unsigned long)10);
@@ -1411,22 +1409,22 @@ BOOST_AUTO_TEST_CASE(increase_the_size_of_the_crossfilter) {
   BOOST_CHECK_EQUAL(data.size(),(unsigned long)10);
 }
 BOOST_AUTO_TEST_CASE(existing_filters_are_consistent_with_new_records) {
-  CrossFilter<int> data;
+  cross::filter<int> data;
   auto foo = data.dimension([](auto d) {return d;});
   auto bar = data.dimension([](auto d) {return -d;});
   BOOST_TEST(foo.top(Infinity) == (std::vector<int>()), boost::test_tools::per_element());
-  foo.filterExact(42);
+  foo.filter_exact(42);
   data.add(std::vector<int>{43,42,41});
   BOOST_TEST(foo.top(Infinity) == (std::vector<int>{42}), boost::test_tools::per_element());
   BOOST_TEST(bar.top(Infinity) == (std::vector<int>{42}), boost::test_tools::per_element());
   data.add(std::vector<int>{43,42});
   BOOST_TEST(foo.top(Infinity) == (std::vector<int>{42,42}), boost::test_tools::per_element());
   BOOST_TEST(bar.top(Infinity) == (std::vector<int>{42,42}), boost::test_tools::per_element());
-  foo.filterRange(42,44);
+  foo.filter_range(42,44);
   data.add(43);
   BOOST_TEST(foo.top(Infinity) == (std::vector<int>{43,43,43,42,42}), boost::test_tools::per_element());
   BOOST_TEST(bar.top(Infinity) == (std::vector<int>{42,42,43,43,43}), boost::test_tools::per_element());
-  foo.filterFunction([](auto d) {
+  foo.filter_function([](auto d) {
       return d % 2 == 1;
     });
 
@@ -1435,28 +1433,28 @@ BOOST_AUTO_TEST_CASE(existing_filters_are_consistent_with_new_records) {
   BOOST_TEST(foo.top(Infinity) == (std::vector<int>{45,43,43,43,41}), boost::test_tools::per_element());
   BOOST_TEST(bar.top(Infinity) == (std::vector<int>{41,43,43,43,45}), boost::test_tools::per_element());
 
-  bar.filterExact(-43);
+  bar.filter_exact(-43);
   BOOST_TEST(bar.top(Infinity) == (std::vector<int>{43,43,43}), boost::test_tools::per_element());
   data.add(43);
   BOOST_TEST(bar.top(Infinity) == (std::vector<int>{43,43,43,43}), boost::test_tools::per_element());
-  bar.filterAll();
+  bar.filter_all();
   data.add(0);
   BOOST_TEST(bar.top(Infinity) == (std::vector<int>{41, 43, 43, 43, 43, 45}), boost::test_tools::per_element());
-  foo.filterAll();
+  foo.filter_all();
   BOOST_TEST(bar.top(Infinity) == (std::vector<int>{0, 41, 42, 42, 43, 43, 43, 43, 44, 44, 45}), boost::test_tools::per_element());
 }
 
 BOOST_AUTO_TEST_CASE(existing_groups_are_consistent_with_new_records) {
-  CrossFilter<int> data;
+  cross::filter<int> data;
   auto foo = data.dimension([](auto d) {return d;});
   auto bar = data.dimension([](auto d) {return -d;});
-  auto foos = foo.group();
-  auto all = data.groupAll();
+  auto foos = foo.feature_count();
+  auto all = data.feature_count();
 
   BOOST_CHECK_EQUAL(all.value(),(unsigned long)0) ;
   BOOST_TEST(foos.all() == (std::vector<std::pair<int,std::size_t>>{}), boost::test_tools::per_element());
 
-  foo.filterExact(42);
+  foo.filter_exact(42);
   data.add(std::vector<int>{43,42,41});
   BOOST_CHECK_EQUAL(all.value(),(unsigned long)1);
   auto a = foos.all();
@@ -1464,7 +1462,7 @@ BOOST_AUTO_TEST_CASE(existing_groups_are_consistent_with_new_records) {
   BOOST_TEST(foos.all() == (std::vector<std::pair<int,std::size_t>>{
         {41, 1}, {42,1}, {43,1}
       }), boost::test_tools::per_element() );
-  bar.filterExact(-42);
+  bar.filter_exact(-42);
   BOOST_CHECK_EQUAL(all.value(),(unsigned long)1);
   BOOST_TEST(foos.all() == (std::vector<std::pair<int,std::size_t>>{
         {41, 0}, {42,1}, {43,0}
@@ -1474,16 +1472,16 @@ BOOST_AUTO_TEST_CASE(existing_groups_are_consistent_with_new_records) {
   BOOST_CHECK_EQUAL(all.value(), (unsigned long)2);
   BOOST_TEST(foos.all() ==  (std::vector<std::pair<int,std::size_t>>{
         {41, 0}, { 42, 2}, { 43, 0}}),boost::test_tools::per_element() );
-  bar.filterAll();
+  bar.filter_all();
   BOOST_CHECK_EQUAL(all.value(),(unsigned long) 2);
   BOOST_TEST(foos.all() ==  (std::vector<std::pair<int,std::size_t>>{
         {41, 2}, { 42, 2}, { 43, 2}}),boost::test_tools::per_element() );
-  foo.filterAll();
+  foo.filter_all();
   BOOST_CHECK_EQUAL(all.value(), (unsigned long)6);
 }
 
 BOOST_AUTO_TEST_CASE(can_add_new_groups_that_are_before_existing_groups) {
-  CrossFilter<int> data;
+  cross::filter<int> data;
   struct reduce_t{
     int foo;
     bool operator < (const reduce_t & rhs) const {
@@ -1500,7 +1498,7 @@ BOOST_AUTO_TEST_CASE(can_add_new_groups_that_are_before_existing_groups) {
   auto remove = [](auto &p, auto, bool) { --p.foo; return p; };
   auto initial= []() { return reduce_t{0}; };
 
-  auto foos = foo.group(add, remove, initial);
+  auto foos = foo.feature(add, remove, initial);
   foos.order(order);
   data.add(2);
   data.add(std::vector<int>{1, 1, 1});
@@ -1512,10 +1510,10 @@ BOOST_AUTO_TEST_CASE(can_add_new_groups_that_are_before_existing_groups) {
 }
 
 BOOST_AUTO_TEST_CASE(can_add_more_than_256_groups) {
-  CrossFilter<int> data;
+  cross::filter<int> data;
   auto foo = data.dimension([](auto d) { return +d; });
   auto bar = data.dimension([](auto d) { return +d; });
-  auto foos = foo.group();
+  auto foos = foo.feature_count();
   std::vector<int> v256(256);
   std::iota(v256.begin(),v256.end(),0);
   data.add(v256);
@@ -1534,7 +1532,7 @@ BOOST_AUTO_TEST_CASE(can_add_more_than_256_groups) {
         {128, 2}
       }),boost::test_tools::per_element());
   
-  bar.filterExact(0);
+  bar.filter_exact(0);
   std::vector<int> vn256(256);
   std::iota(vn256.begin(), vn256.end(),-256);
   data.add(vn256);
@@ -1557,13 +1555,13 @@ BOOST_AUTO_TEST_CASE(can_add_lots_of_groups_in_reverse_order) {
     int bar;
   };
   
-  CrossFilter<Rec2> data;
+  cross::filter<Rec2> data;
   auto foo = data.dimension([](auto d) { return -d.foo; });
   auto bar = data.dimension([](auto d) { return d.bar; });
-  auto foos = foo.groupReduceSum([](auto d) { return d.foo; },
+  auto foos = foo.feature_sum([](auto d) { return d.foo; },
                                  [](auto d) ->int{ return std::floor(d);}
                                  );
-  bar.filterExact(1);
+  bar.filter_exact(1);
   std::vector<Rec2> d(10);
   for (int i = 0; i < 1000; i++) {
     for(int j = 0; j < 10; j++) {
@@ -1583,52 +1581,52 @@ BOOST_AUTO_TEST_SUITE(isElementFiltered)
 BOOST_AUTO_TEST_CASE(test_if_elements_are_filtered) {
   Fixture data;
   
-  BOOST_TEST(data.cr.isElementFiltered(0)); // quantity = 2; total = 190;
-  BOOST_TEST(data.cr.isElementFiltered(2)); // quantity = 1; total = 300;
-  BOOST_TEST(data.cr.isElementFiltered(6)); // quantity = 1; total = 100;
-  BOOST_TEST(data.cr.isElementFiltered(0,data.quantity)); // quantity = 2; total = 190;
-  BOOST_TEST(data.cr.isElementFiltered(2,data.quantity)); // quantity = 1; total = 300;
-  BOOST_TEST(data.cr.isElementFiltered(6,data.quantity)); // quantity = 1; total = 100;
-  BOOST_TEST(data.cr.isElementFiltered(0,data.total)); // quantity = 2; total = 190;
-  BOOST_TEST(data.cr.isElementFiltered(2,data.total)); // quantity = 1; total = 300;
-  BOOST_TEST(data.cr.isElementFiltered(6,data.total)); // quantity = 1; total = 100;
-  BOOST_TEST(data.cr.isElementFiltered(0,data.quantity,data.total)); // quantity = 2; total = 190;
-  BOOST_TEST(data.cr.isElementFiltered(2,data.quantity,data.total)); // quantity = 1; total = 300;
-  BOOST_TEST(data.cr.isElementFiltered(6,data.quantity,data.total)); // quantity = 1; total = 100;
+  BOOST_TEST(data.cr.is_element_filtered(0)); // quantity = 2; total = 190;
+  BOOST_TEST(data.cr.is_element_filtered(2)); // quantity = 1; total = 300;
+  BOOST_TEST(data.cr.is_element_filtered(6)); // quantity = 1; total = 100;
+  BOOST_TEST(data.cr.is_element_filtered(0,data.quantity)); // quantity = 2; total = 190;
+  BOOST_TEST(data.cr.is_element_filtered(2,data.quantity)); // quantity = 1; total = 300;
+  BOOST_TEST(data.cr.is_element_filtered(6,data.quantity)); // quantity = 1; total = 100;
+  BOOST_TEST(data.cr.is_element_filtered(0,data.total)); // quantity = 2; total = 190;
+  BOOST_TEST(data.cr.is_element_filtered(2,data.total)); // quantity = 1; total = 300;
+  BOOST_TEST(data.cr.is_element_filtered(6,data.total)); // quantity = 1; total = 100;
+  BOOST_TEST(data.cr.is_element_filtered(0,data.quantity,data.total)); // quantity = 2; total = 190;
+  BOOST_TEST(data.cr.is_element_filtered(2,data.quantity,data.total)); // quantity = 1; total = 300;
+  BOOST_TEST(data.cr.is_element_filtered(6,data.quantity,data.total)); // quantity = 1; total = 100;
   
-  data.quantity.filterExact(1);
-  BOOST_TEST(!data.cr.isElementFiltered(0)); // quantity = 2; total = 190;
-  BOOST_TEST(data.cr.isElementFiltered(2)); // quantity = 1; total = 300;
-  BOOST_TEST(data.cr.isElementFiltered(6)); // quantity = 1; total = 100;
-  BOOST_TEST(data.cr.isElementFiltered(0,data.quantity)); // quantity = 2; total = 190;
-  BOOST_TEST(data.cr.isElementFiltered(2,data.quantity)); // quantity = 1; total = 300;
-  BOOST_TEST(data.cr.isElementFiltered(6,data.quantity)); // quantity = 1; total = 100;
-  BOOST_TEST(!data.cr.isElementFiltered(0,data.total)); // quantity = 2; total = 190;
-  BOOST_TEST(data.cr.isElementFiltered(2,data.total)); // quantity = 1; total = 300;
-  BOOST_TEST(data.cr.isElementFiltered(6,data.total)); // quantity = 1; total = 100;
-  BOOST_TEST(data.cr.isElementFiltered(0,data.quantity,data.total)); // quantity = 2; total = 190;
-  BOOST_TEST(data.cr.isElementFiltered(2,data.quantity,data.total)); // quantity = 1; total = 300;
-  BOOST_TEST(data.cr.isElementFiltered(6,data.quantity,data.total)); // quantity = 1; total = 100;
+  data.quantity.filter_exact(1);
+  BOOST_TEST(!data.cr.is_element_filtered(0)); // quantity = 2; total = 190;
+  BOOST_TEST(data.cr.is_element_filtered(2)); // quantity = 1; total = 300;
+  BOOST_TEST(data.cr.is_element_filtered(6)); // quantity = 1; total = 100;
+  BOOST_TEST(data.cr.is_element_filtered(0,data.quantity)); // quantity = 2; total = 190;
+  BOOST_TEST(data.cr.is_element_filtered(2,data.quantity)); // quantity = 1; total = 300;
+  BOOST_TEST(data.cr.is_element_filtered(6,data.quantity)); // quantity = 1; total = 100;
+  BOOST_TEST(!data.cr.is_element_filtered(0,data.total)); // quantity = 2; total = 190;
+  BOOST_TEST(data.cr.is_element_filtered(2,data.total)); // quantity = 1; total = 300;
+  BOOST_TEST(data.cr.is_element_filtered(6,data.total)); // quantity = 1; total = 100;
+  BOOST_TEST(data.cr.is_element_filtered(0,data.quantity,data.total)); // quantity = 2; total = 190;
+  BOOST_TEST(data.cr.is_element_filtered(2,data.quantity,data.total)); // quantity = 1; total = 300;
+  BOOST_TEST(data.cr.is_element_filtered(6,data.quantity,data.total)); // quantity = 1; total = 100;
 
-  data.total.filterExact(100);
-  BOOST_TEST(!data.cr.isElementFiltered(0)); // quantity = 2; total = 190;
-  BOOST_TEST(!data.cr.isElementFiltered(2)); // quantity = 1; total = 300;
-  BOOST_TEST(data.cr.isElementFiltered(6)); // quantity = 1; total = 100;
-  BOOST_TEST(!data.cr.isElementFiltered(0,data.quantity)); // quantity = 2; total = 190;
-  BOOST_TEST(!data.cr.isElementFiltered(2,data.quantity)); // quantity = 1; total = 300;
-  BOOST_TEST(data.cr.isElementFiltered(6,data.quantity)); // quantity = 1; total = 100;
-  BOOST_TEST(!data.cr.isElementFiltered(0,data.total)); // quantity = 2; total = 190;
-  BOOST_TEST(data.cr.isElementFiltered(2,data.total)); // quantity = 1; total = 300;
-  BOOST_TEST(data.cr.isElementFiltered(6,data.total)); // quantity = 1; total = 100;
-  BOOST_TEST(data.cr.isElementFiltered(0,data.quantity,data.total)); // quantity = 2; total = 190;
-  BOOST_TEST(data.cr.isElementFiltered(2,data.quantity,data.total)); // quantity = 1; total = 300;
-  BOOST_TEST(data.cr.isElementFiltered(6,data.quantity,data.total)); // quantity = 1; total = 100;
+  data.total.filter_exact(100);
+  BOOST_TEST(!data.cr.is_element_filtered(0)); // quantity = 2; total = 190;
+  BOOST_TEST(!data.cr.is_element_filtered(2)); // quantity = 1; total = 300;
+  BOOST_TEST(data.cr.is_element_filtered(6)); // quantity = 1; total = 100;
+  BOOST_TEST(!data.cr.is_element_filtered(0,data.quantity)); // quantity = 2; total = 190;
+  BOOST_TEST(!data.cr.is_element_filtered(2,data.quantity)); // quantity = 1; total = 300;
+  BOOST_TEST(data.cr.is_element_filtered(6,data.quantity)); // quantity = 1; total = 100;
+  BOOST_TEST(!data.cr.is_element_filtered(0,data.total)); // quantity = 2; total = 190;
+  BOOST_TEST(data.cr.is_element_filtered(2,data.total)); // quantity = 1; total = 300;
+  BOOST_TEST(data.cr.is_element_filtered(6,data.total)); // quantity = 1; total = 100;
+  BOOST_TEST(data.cr.is_element_filtered(0,data.quantity,data.total)); // quantity = 2; total = 190;
+  BOOST_TEST(data.cr.is_element_filtered(2,data.quantity,data.total)); // quantity = 1; total = 300;
+  BOOST_TEST(data.cr.is_element_filtered(6,data.quantity,data.total)); // quantity = 1; total = 100;
 }
 BOOST_AUTO_TEST_SUITE_END();
 
 BOOST_AUTO_TEST_SUITE(on_change)
 BOOST_AUTO_TEST_CASE(sends_the_eventName_with_the_callback) {
-  CrossFilter<int> data;
+  cross::filter<int> data;
   std::string name;
   data.onChange([&name](auto eventName) {name = eventName;});
   data.add(1);
