@@ -14,53 +14,59 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include "detail/type_traits.hpp"
 #include "detail/crossfilter_impl.hpp"
 
+namespace cross {
+
+template <typename Key, typename Reduce, typename Dimension, bool> struct feature;
+
+namespace impl {
+
 namespace trait {
 template <typename, bool> struct cond_type;
 template<typename T> struct cond_type<T, true> { using type = extract_container_value_t<T>;};
 template<typename T> struct cond_type<T, false> { using type = T;};
 }
 
-template <typename Key, typename Reduce, typename Dimension, bool> struct Group;
+
 template<typename Value, bool isIterable>
 struct val {
   struct value_type1 : std::enable_if<isIterable, typename extract_container_value_t<Value>::type> {};
   struct value_type2 : std::enable_if<!isIterable, Value> {};
 };
 
-template<typename T> struct CrossFilterImpl;
+template<typename T> struct filter_impl;
 
-template <typename V, typename T, bool isIterable> struct DimensionImpl {
+template <typename V, typename T, bool isIterable> struct dimension_impl {
   using value_type_t = typename trait::cond_type<V, isIterable>::type;
-  using parent_type_t = typename CrossFilterImpl<T>::this_type_t;
+  using parent_type_t = typename filter_impl<T>::this_type_t;
   using field_type_t = V;
-  using record_type_t = typename CrossFilterImpl<T>::record_type_t;
-  using this_type_t = Dimension<V, T, isIterable>;
-  using data_iterator = typename CrossFilterImpl<T>::data_iterator;
+  using record_type_t = typename filter_impl<T>::record_type_t;
+  using this_type_t = dimension<V, T, isIterable>;
+  using data_iterator = typename filter_impl<T>::data_iterator;
 
-  template<typename F> using signal_type_t = typename CrossFilterImpl<T>::template signal_type_t<F>;
-  using connection_type_t = typename CrossFilterImpl<T>::connection_type_t;
+  template<typename F> using signal_type_t = typename filter_impl<T>::template signal_type_t<F>;
+  using connection_type_t = typename filter_impl<T>::connection_type_t;
   
   template <typename Key, typename Reduce, typename Dimension, bool>
-  friend struct Group;
+  friend struct feature;
 
   std::vector<value_type_t> values;
   std::vector<std::size_t> indexes;
-  std::vector<value_type_t> newValues;
-  std::vector<std::size_t> newIndexes;
+  std::vector<value_type_t> new_values;
+  std::vector<std::size_t> new_indexes;
   std::vector<std::size_t> added;
   std::vector<std::size_t> removed;
-  std::size_t oldDataSize = 0;
+  std::size_t old_data_size = 0;
 
-  CrossFilterImpl<T> * crossfilter = nullptr;
-  std::size_t dimensionOffset;
-  int dimensionBitIndex;
+  filter_impl<T> * crossfilter = nullptr;
+  std::size_t dimension_offset;
+  int dimension_bit_index;
 
   std::size_t low = 0;
   std::size_t high = 0;
 
   // iterable stuff
-  std::vector<std::size_t> iterablesIndexCount;
-  std::vector<std::size_t> iterablesEmptyRows;
+  std::vector<std::size_t> iterables_index_count;
+  std::vector<std::size_t> iterables_empty_rows;
 
 
   std::function<std::tuple<std::size_t, std::size_t>(
@@ -69,23 +75,23 @@ template <typename V, typename T, bool isIterable> struct DimensionImpl {
 
   std::function<field_type_t(const record_type_t &)> getter;
 
-  std::function<bool(value_type_t)> refilterFunction;
+  std::function<bool(value_type_t)> refilter_function;
 
-  bool refilterFunctionFlag = false;
+  bool refilter_function_flag = false;
 
-  std::function<void(std::size_t)> slotPostAdd;
-  connection_type_t connectionPostAdd;
+  std::function<void(std::size_t)> slot_post_add;
+  connection_type_t connection_post_add;
 
-  std::function<void(data_iterator, data_iterator)> slotAdd;
-  connection_type_t connectionAdd;
+  std::function<void(data_iterator, data_iterator)> slot_add;
+  connection_type_t connection_add;
 
-  std::function<void(const std::vector<int64_t> &)> slotRemove;
-  connection_type_t connectionRemove;
+  std::function<void(const std::vector<int64_t> &)> slot_remove;
+  connection_type_t connection_remove;
 
-  signal_type_t<void(const std::vector<int64_t> &)> removeSignal;
-  signal_type_t<void()> disposeDimensionSignal;
+  signal_type_t<void(const std::vector<int64_t> &)> remove_signal;
+  signal_type_t<void()> dispose_dimension_signal;
   signal_type_t<void(const std::vector<value_type_t> &,
-                               const std::vector<std::size_t> &, std::size_t, std::size_t)>  addSignal;
+                               const std::vector<std::size_t> &, std::size_t, std::size_t)>  add_signal;
 
   template<bool Enable = true>
   std::enable_if_t<isIterable && Enable> add(data_iterator begin, data_iterator end);
@@ -95,131 +101,132 @@ template <typename V, typename T, bool isIterable> struct DimensionImpl {
 
   //  void  addIterable(data_iterator begin, data_iterator end);
 
-  bool zeroExcept(std::size_t index);
+  bool zero_except(std::size_t index);
 
-  bool onlyExcept(std::size_t index, std::size_t offset, int bitIndex);
+  bool only_except(std::size_t index, std::size_t offset, int bitIndex);
 
   record_type_t &get(std::size_t index);
 
-  record_type_t &getRaw(std::size_t index);
+  record_type_t &get_raw(std::size_t index);
 
-  connection_type_t connectFilterSlot(
-      std::function<void(std::size_t filterOffset, int filterBitNum,
+  connection_type_t connect_filter_slot(
+      std::function<void(std::size_t filter_offset, int filter_bit_num,
                          const std::vector<std::size_t> &,
                          const std::vector<std::size_t> &, bool)> slot);
 
   connection_type_t
-  connectAddSlot(std::function<void(const std::vector<value_type_t> &,
+  connect_add_slot(std::function<void(const std::vector<value_type_t> &,
                                     const std::vector<std::size_t> &, std::size_t, std::size_t)> slot);
 
   connection_type_t
-  connectRemoveSlot(std::function<void(const std::vector<int64_t> &)> slot);
+  connect_remove_slot(std::function<void(const std::vector<int64_t> &)> slot);
 
   connection_type_t
-  connectDisposeSlot(std::function<void()> slot);
+  connect_dispose_slot(std::function<void()> slot);
 
-  void removeData(const std::vector<int64_t> &reIndex);
+  void remove_data(const std::vector<int64_t> &re_index);
 
-  void removeDataIterable(const std::vector<int64_t> &reIndex);
+  void remove_data_iterable(const std::vector<int64_t> &re_index);
 
   std::tuple<std::size_t, std::size_t>
-  refilterRange(const value_type_t & left, const value_type_t &right,
+  refilter_range(const value_type_t & left, const value_type_t &right,
                 const std::vector<value_type_t> &data);
 
   std::tuple<std::size_t, std::size_t>
-  refilterExact(const value_type_t &value, const std::vector<value_type_t> &data);
+  refilter_exact(const value_type_t &value, const std::vector<value_type_t> &data);
 
   template<bool Enable = true>
   std::enable_if_t<isIterable && Enable>
-  doFilter(std::size_t filterLowIndex, std::size_t filterHighIndex);
+  do_filter(std::size_t filter_low_index, std::size_t filter_high_index);
+
   template<bool Enable = true>
   std::enable_if_t<!isIterable && Enable>
-  doFilter(std::size_t filterLowIndex, std::size_t filterHighIndex);
+  do_filter(std::size_t filter_low_index, std::size_t filter_high_index);
 
  public:
-  DimensionImpl() {}
+  dimension_impl() {}
 
-  DimensionImpl(CrossFilterImpl<T> *cf, std::tuple<std::size_t, int> filterPos_,
+  dimension_impl(filter_impl<T> *cf, std::tuple<std::size_t, int> filter_pos_,
             std::function<field_type_t(const record_type_t &)> getter_);
 
-  DimensionImpl(DimensionImpl<V, T, isIterable> && dim)
+  dimension_impl(dimension_impl<V, T, isIterable> && dim)
       : values(dim.values), indexes(dim.indexes), crossfilter(dim.crossfilter),
-        dimensionOffset(dim.dimensionOffset), dimensionBitIndex(dim.dimensionBitIndex),
-        low(dim.low), high(dim.high), iterablesIndexCount(dim.iterablesIndexCount),
-        iterablesEmptyRows(dim.iterablesEmptyRows), refilter(dim.refilter),
-        getter(dim.getter), refilterFunctionFlag(dim.refilterFunctionFlag),
-        removeSignal(std::move(dim.removeSignal)),
-        disposeDimensionSignal(std::move(dim.disposeDimensionSignal)),
-        addSignal(std::move(dim.addSignal))  {
-    slotAdd =  [this](data_iterator begin, data_iterator end) {
+        dimension_offset(dim.dimension_offset), dimension_bit_index(dim.dimension_bit_index),
+        low(dim.low), high(dim.high), iterables_index_count(dim.iterables_index_count),
+        iterables_empty_rows(dim.iterables_empty_rows), refilter(dim.refilter),
+        getter(dim.getter), refilter_function_flag(dim.refilter_function_flag),
+        remove_signal(std::move(dim.remove_signal)),
+        dispose_dimension_signal(std::move(dim.dispose_dimension_signal)),
+        add_signal(std::move(dim.add_signal))  {
+    slot_add =  [this](data_iterator begin, data_iterator end) {
       this->add(begin, end); };
 
-    slotRemove = [this] (const std::vector<int64_t> &reIndex) {
-      this->removeData(reIndex);
+    slot_remove = [this] (const std::vector<int64_t> &re_index) {
+      this->remove_data(re_index);
     };
 
-    slotPostAdd = [this](std::size_t newDataSize) {
-      addSignal(newValues, newIndexes, oldDataSize, newDataSize);
-      newValues.clear();
+    slot_post_add = [this](std::size_t new_data_size) {
+      add_signal(new_values, new_indexes, old_data_size, new_data_size);
+      new_values.clear();
     };
 
-    dim.connectionAdd.disconnect();
-    connectionAdd = crossfilter->connectAddSlot(slotAdd);
-    dim.connectionRemove.disconnect();
-    connectionRemove = crossfilter->connectRemoveSlot(slotRemove);
+    dim.connection_add.disconnect();
+    connection_add = crossfilter->connect_add_slot(slot_add);
+    dim.connection_remove.disconnect();
+    connection_remove = crossfilter->connect_remove_slot(slot_remove);
   }
 
-  DimensionImpl & operator = (DimensionImpl<V, T, isIterable> && dim) {
+  dimension_impl & operator = (dimension_impl<V, T, isIterable> && dim) {
     values = std::move(dim.values);
     indexes = std::move(dim.indexes);
     crossfilter = std::move(dim.crossfilter);
-    dimensionOffset = dim.dimensionOffset;
-    dimensionBitIndex = dim.dimensionBitIndex;
+    dimension_offset = dim.dimension_offset;
+    dimension_bit_index = dim.dimension_bit_index;
     low = dim.low;
     high = dim.high;
-    iterablesIndexCount = std::move(dim.iterablesIndexCount);
-    iterablesEmptyRows = std::move(dim.iterablesEmptyRows);
+    iterables_index_count = std::move(dim.iterables_index_count);
+    iterables_empty_rows = std::move(dim.iterables_empty_rows);
     refilter = std::move(dim.refilter);
     getter = std::move(dim.getter);
-    refilterFunctionFlag = dim.refilterFunctionFlag;
-    removeSignal = std::move(dim.removeSignal);
-    disposeDimensionSignal = std::move(dim.disposeDimensionSignal);
-    addSignal = std::move(dim.addSignal);
-    slotAdd =  [this](data_iterator begin, data_iterator end) {
+    refilter_function_flag = dim.refilter_function_flag;
+    remove_signal = std::move(dim.remove_signal);
+    dispose_dimension_signal = std::move(dim.dispose_dimension_signal);
+    add_signal = std::move(dim.add_signal);
+    slot_add =  [this](data_iterator begin, data_iterator end) {
       this->add(begin, end); };
 
-    slotRemove = [this] (const std::vector<int64_t> &reIndex) {
-      this->removeData(reIndex);
+    slot_remove = [this] (const std::vector<int64_t> &reindex) {
+      this->remove_data(reindex);
     };
-    slotPostAdd = [this](std::size_t newDataSize) {
-      addSignal(newValues, newIndexes, oldDataSize, newDataSize);
-      newValues.clear();
+    slot_post_add = [this](std::size_t new_data_size) {
+      add_signal(new_values, new_indexes, old_data_size, new_data_size);
+      new_values.clear();
     };
 
 
-    connectionAdd.disconnect();
-    dim.connectionAdd.disconnect();
-    connectionAdd = crossfilter->connectAddSlot(slotAdd);
+    connection_add.disconnect();
+    dim.connection_add.disconnect();
+    connection_add = crossfilter->connect_add_slot(slot_add);
 
-    dim.connectionRemove.disconnect();
-    connectionRemove.disconnect();
-    connectionRemove = crossfilter->connectRemoveSlot(slotRemove);
-    dim.connectionPostAdd.disconnect();
-    connectionPostAdd.disconnect();
-    connectionPostAdd = crossfilter->connectPostAddSlot(slotPostAdd);
+    dim.connection_remove.disconnect();
+    connection_remove.disconnect();
+    connection_remove = crossfilter->connect_remove_slot(slot_remove);
+    dim.connection_post_add.disconnect();
+    connection_post_add.disconnect();
+    connection_post_add = crossfilter->connect_post_add_slot(slot_post_add);
 
     return *this;
   }
 
   void dispose();
 
-  void filterRange(const value_type_t &left, const value_type_t &right);
+  void filter_range(const value_type_t &left, const value_type_t &right);
 
-  void filterExact(const value_type_t &value);
+  void filter_exact(const value_type_t &value);
 
-  void filterAll();
+  void filter_all();
 
-  void filterWithPredicate(std::function<bool(const value_type_t &)> filterFunction);
+  void filter_with_predicate(std::function<bool(const value_type_t &)> filter_function);
 
   std::vector<record_type_t> bottom(int64_t k,
                                     int64_t bottom_offset = 0);
@@ -228,27 +235,29 @@ template <typename V, typename T, bool isIterable> struct DimensionImpl {
 
   template <typename K, typename R>
   auto
-  group(std::function<K(const value_type_t &)> key,
-        std::function<R(R &, const record_type_t &, bool)> add_func_,
-        std::function<R(R &, const record_type_t &, bool)> remove_func_,
-        std::function<R()> initial_func_) ->   Group<K, R, this_type_t, false>;
+  feature(std::function<K(const value_type_t &)> key,
+          std::function<R(R &, const record_type_t &, bool)> add_func_,
+          std::function<R(R &, const record_type_t &, bool)> remove_func_,
+          std::function<R()> initial_func_) -> cross::feature<K, R, this_type_t, false>;
+  
+  template <typename AddFunc, typename RemoveFunc, typename InitialFunc>
+  auto 
+  feature_all(AddFunc add_func_,
+              RemoveFunc remove_func_,
+              InitialFunc initial_func_) ->  cross::feature<std::size_t, decltype(initial_func_()), this_type_t, true>;
 
-  template <typename R>
-  Group<std::size_t, R, this_type_t, true> groupAll(
-      std::function<R(R &, const record_type_t &, bool)> add_func_,
-      std::function<R(R &, const record_type_t &, bool)> remove_func_,
-      std::function<R()> initial_func_);
-
-  std::size_t translateIndex(std::size_t index) const {
+  std::size_t translate_index(std::size_t index) const {
       return indexes[index];
   }
-  static constexpr  bool getIsIterable() {
+  static constexpr  bool get_is_iterable() {
     return isIterable;
   }
   void filter1(std::vector<std::size_t> & added, std::vector<std::size_t>& removed, std::size_t filterLowIndex, std::size_t filterHighIndex);
   void filter2(std::vector<std::size_t> & added, std::vector<std::size_t>& removed, std::size_t filterLowIndex, std::size_t filterHighIndex);
 };
-
+} //namespace impl
+} //namespace cross
 #include "impl/dimension_impl.ipp"
+
 
 #endif

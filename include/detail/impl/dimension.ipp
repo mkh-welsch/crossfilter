@@ -6,89 +6,89 @@ Copyright (c) 2018 Dmitry Vinokurov */
 
 #include <numeric>
 #include "detail/dimension.hpp"
-
+namespace cross {
 
 template<typename V, typename T, bool isIterable>
 inline
-Dimension<V, T, isIterable>::Dimension(CrossFilterImpl<T> *cf, std::tuple<std::size_t, int> filterPos_,
+dimension<V, T, isIterable>::dimension(impl::filter_impl<T> *cf, std::tuple<std::size_t, int> filter_pos_,
                                    std::function<field_type_t(const record_type_t &)> getter_)
-    : DimensionImpl<V, T, isIterable>(cf, filterPos_, getter_) {
+    : impl::dimension_impl<V, T, isIterable>(cf, filter_pos_, getter_) {
 }
 
 
 template<typename V, typename T, bool isIterable>
 inline
-void  Dimension<V, T, isIterable>::dispose() {
-  DimensionImpl<V, T, isIterable>::dispose();
+void  dimension<V, T, isIterable>::dispose() {
+  impl::dimension_impl<V, T, isIterable>::dispose();
 }
 
 
 template<typename V, typename T, bool  isIterable>
 inline
-void  Dimension<V, T, isIterable>::filterRange(const value_type_t & left, const value_type_t & right) {
-  DimensionImpl<V, T, isIterable>::filterRange(left, right);
+void  dimension<V, T, isIterable>::filter_range(const value_type_t & left, const value_type_t & right) {
+  impl::dimension_impl<V, T, isIterable>::filter_range(left, right);
 }
 
 template<typename V, typename T, bool  isIterable>
 inline
-void  Dimension<V, T, isIterable>::filterExact(const value_type_t & value) {
-  DimensionImpl<V, T, isIterable>::filterExact(value);
+void  dimension<V, T, isIterable>::filter_exact(const value_type_t & value) {
+  impl::dimension_impl<V, T, isIterable>::filter_exact(value);
 }
 
 template<typename V, typename T, bool  isIterable>
 inline
-void  Dimension<V, T, isIterable>::filterAll() {
-  DimensionImpl<V, T, isIterable>::filterAll();
+void  dimension<V, T, isIterable>::filter_all() {
+  impl::dimension_impl<V, T, isIterable>::filter_all();
 }
 
 template<typename V, typename T, bool  isIterable>
 inline
 void
-Dimension<V, T, isIterable>::filterWithPredicate(std::function<bool(const value_type_t&)> filterFunction) {
-  DimensionImpl<V, T, isIterable>::filterWithPredicate(filterFunction);
+dimension<V, T, isIterable>::filter_with_predicate(std::function<bool(const value_type_t&)> filter_function) {
+  impl::dimension_impl<V, T, isIterable>::filter_with_predicate(filter_function);
 }
 template<typename V, typename T, bool  isIterable>
 inline
-void  Dimension<V, T, isIterable>::filterFunction(std::function<bool(const value_type_t&)> predicate) {
-  DimensionImpl<V, T, isIterable>::filterWithPredicate(predicate);
+void  dimension<V, T, isIterable>::filter_function(std::function<bool(const value_type_t&)> predicate) {
+  impl::dimension_impl<V, T, isIterable>::filter_with_predicate(predicate);
 }
 
 template<typename V, typename T, bool  isIterable>
 inline
 auto
-Dimension<V, T, isIterable>::bottom(int64_t k, int64_t bottom_offset) -> std::vector<record_type_t> {
-  return DimensionImpl<V, T, isIterable>::bottom(k, bottom_offset);
+dimension<V, T, isIterable>::bottom(int64_t k, int64_t bottom_offset) -> std::vector<record_type_t> {
+  return impl::dimension_impl<V, T, isIterable>::bottom(k, bottom_offset);
 }
 
 template<typename V, typename T, bool  isIterable>
 inline
-std::vector<typename Dimension<V, T, isIterable>::record_type_t>
-Dimension<V, T, isIterable>::top(int64_t k, int64_t top_offset) {
-  return DimensionImpl<V, T, isIterable>::top(k, top_offset);
+std::vector<typename dimension<V, T, isIterable>::record_type_t>
+dimension<V, T, isIterable>::top(int64_t k, int64_t top_offset) {
+  return impl::dimension_impl<V, T, isIterable>::top(k, top_offset);
 }
 
 template<typename V, typename T, bool  isIterable>
 template <typename AddFunc, typename RemoveFunc, typename InitialFunc, typename KeyFunc>
 inline
-auto Dimension<V, T, isIterable>::group(
+auto dimension<V, T, isIterable>::feature(
     AddFunc add_func_,
     RemoveFunc remove_func_,
     InitialFunc initial_func_,
-    KeyFunc key) -> Group<decltype(key(std::declval<value_type_t>())),
+    KeyFunc key) -> cross::feature<decltype(key(std::declval<value_type_t>())),
                           decltype(initial_func_()), this_type_t, false> {
   using K = decltype(key(std::declval<value_type_t>()));
   using R = decltype(initial_func_());
-  return DimensionImpl<V, T, isIterable>::template group<K, R>(key, add_func_, remove_func_, initial_func_);
+  return impl::dimension_impl<V, T, isIterable>::template feature<K, R>(key, add_func_, remove_func_, initial_func_);
 }
 
 template<typename V, typename T, bool  isIterable>
 template<typename F>
 inline
 auto
-Dimension<V, T, isIterable>::groupReduceCount(F key) ->
-    Group<decltype(key(std::declval<value_type_t>())),
+dimension<V, T, isIterable>::feature_count(F key) ->
+    cross::feature<decltype(key(std::declval<value_type_t>())),
           std::size_t, this_type_t, false> {
-  return group(
+  return feature(
       [](std::size_t & r, const record_type_t &, bool ) {
         r++;
         return r;
@@ -106,11 +106,11 @@ Dimension<V, T, isIterable>::groupReduceCount(F key) ->
 template<typename V, typename T, bool  isIterable>
 template<typename ValueFunc, typename KeyFunc>
 inline
-auto Dimension<V, T, isIterable>::groupReduceSum(ValueFunc value,
+auto dimension<V, T, isIterable>::feature_sum(ValueFunc value,
                                                           KeyFunc key)
-    -> Group<decltype(key(std::declval<value_type_t>())),
-             decltype(value(std::declval<record_type_t>())), this_type_t, false> {
-  return group(
+    -> cross::feature<decltype(key(std::declval<value_type_t>())),
+                      decltype(value(std::declval<record_type_t>())), this_type_t, false> {
+  return feature(
       [value](auto & r, const auto & rec, bool) {
         r += value(rec);
         return r;// + value(rec);
@@ -126,22 +126,22 @@ auto Dimension<V, T, isIterable>::groupReduceSum(ValueFunc value,
 }
 
 template<typename V, typename T, bool isIterable>
-template <typename R>
+template <typename AddFunc, typename RemoveFunc, typename InitialFunc>
 inline
 auto
-Dimension<V, T, isIterable>::groupAll(
-    std::function<R(R &, const record_type_t &, bool)> add_func_,
-    std::function<R(R &, const record_type_t &, bool)> remove_func_,
-    std::function<R()> initial_func_) -> Group<std::size_t, R, this_type_t, true> {
-  return DimensionImpl<V, T, isIterable>::template groupAll<R>(add_func_, remove_func_, initial_func_);
+dimension<V, T, isIterable>::feature_all(
+    AddFunc add_func_,
+    RemoveFunc remove_func_,
+    InitialFunc initial_func_) -> cross::feature<std::size_t, decltype(initial_func_()), this_type_t, true> {
+  return impl::dimension_impl<V, T, isIterable>::template feature_all(add_func_, remove_func_, initial_func_);
 }
 
 
 template<typename V, typename T, bool  isIterable>
 inline
 auto
-Dimension<V, T, isIterable>::groupAllReduceCount() -> Group<std::size_t, std::size_t, this_type_t, true> {
-    return groupAll<std::size_t>(
+dimension<V, T, isIterable>::feature_all_count() -> cross::feature<std::size_t, std::size_t, this_type_t, true> {
+    return feature_all(
         [](std::size_t & r, const record_type_t &, bool ) {
           return r + 1;
         },
@@ -156,10 +156,10 @@ Dimension<V, T, isIterable>::groupAllReduceCount() -> Group<std::size_t, std::si
 template<typename V, typename T, bool isIterable>
 template<typename G>
 inline
-auto Dimension<V, T, isIterable>::groupAllReduceSum(G value)
-    -> Group<std::size_t, decltype(value(record_type_t())), this_type_t, true> {
+auto dimension<V, T, isIterable>::feature_all_sum(G value)
+    -> cross::feature<std::size_t, decltype(value(record_type_t())), this_type_t, true> {
   using reduce_type = decltype(value(record_type_t()));
-  return groupAll<reduce_type>(
+  return feature_all(
       [value](reduce_type & r, const record_type_t & rec, bool) {
         return r + value(rec);
       },
@@ -171,3 +171,4 @@ auto Dimension<V, T, isIterable>::groupAllReduceSum(G value)
       });
 }
 
+} //namespace cross

@@ -12,93 +12,93 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <tuple>
 //#include <boost/signals2.hpp>
 #include "detail/dimension_impl.hpp"
-
-template <typename K, typename R, typename P, bool> struct Group;
+namespace cross {
+template <typename K, typename R, typename P, bool> struct feature;
 
 template <typename V, typename T, bool isIterable>
-struct  Dimension : private DimensionImpl<V, T, isIterable> {
-  using value_type_t = typename DimensionImpl<V, T, isIterable>::value_type_t;
-  using field_type_t = typename DimensionImpl<V, T, isIterable>::field_type_t;
-  using record_type_t = typename DimensionImpl<V, T, isIterable>::record_type_t;
-  using this_type_t = Dimension<V, T, isIterable>;
-  using base_type_t = DimensionImpl<V,T,isIterable>;
-  using connection_type_t = typename DimensionImpl<V,T,isIterable>::connection_type_t;
-  template<typename F> using signal_type_t = typename DimensionImpl<V,T,isIterable>::template signal_type_t<F>;
-  static constexpr  bool getIsIterable() {
+struct  dimension : private impl::dimension_impl<V, T, isIterable> {
+  using value_type_t = typename impl::dimension_impl<V, T, isIterable>::value_type_t;
+  using field_type_t = typename impl::dimension_impl<V, T, isIterable>::field_type_t;
+  using record_type_t = typename impl::dimension_impl<V, T, isIterable>::record_type_t;
+  using this_type_t = dimension<V, T, isIterable>;
+  using base_type_t = impl::dimension_impl<V,T,isIterable>;
+  using connection_type_t = typename impl::dimension_impl<V,T,isIterable>::connection_type_t;
+  template<typename F> using signal_type_t = typename impl::dimension_impl<V,T,isIterable>::template signal_type_t<F>;
+  static constexpr  bool get_is_iterable() {
     return isIterable;
   }
 
 
   //  static const std::function<value_type_t(const value_type_t &)> identity_function =
 
-  Dimension() {}
+  dimension() {}
 
-  Dimension(CrossFilterImpl<T> *cf, std::tuple<std::size_t, int> filterPos_,
+  dimension(impl::filter_impl<T> *cf, std::tuple<std::size_t, int> filterPos_,
             std::function<field_type_t(const record_type_t &)> getter_);
 
-  Dimension(Dimension<V, T, isIterable> && dim)
-      :DimensionImpl<V, T, isIterable>(std::move(dim)) {  }
+  dimension(dimension<V, T, isIterable> && dim)
+      :impl::dimension_impl<V, T, isIterable>(std::move(dim)) {  }
 
-  Dimension & operator = (Dimension && dim) {
+  dimension & operator = (dimension && dim) {
     if (this == &dim)
       return *this;
-    DimensionImpl<V, T, isIterable>::operator=(std::move(dim));
+    impl::dimension_impl<V, T, isIterable>::operator=(std::move(dim));
     return *this;
   }
 
 
   void dispose();
 
-  std::size_t getOffset() const {
-    return DimensionImpl<V, T, isIterable>::dimensionOffset;
+  std::size_t get_offset() const {
+    return impl::dimension_impl<V, T, isIterable>::dimension_offset;
   }
 
-  std::size_t getBitIndex() const {
-    return DimensionImpl<V, T, isIterable>::dimensionBitIndex;
+  std::size_t get_bit_index() const {
+    return impl::dimension_impl<V, T, isIterable>::dimension_bit_index;
   }
   /**
      Filters records such that this dimension's value is greater than or equal to left, and less than right.
    */
-  void filterRange(const value_type_t &left, const value_type_t &right);
+  void filter_range(const value_type_t &left, const value_type_t &right);
   /**
      Filters records such that this dimension's value equals value
   */
-  void filterExact(const value_type_t &value);
+  void filter_exact(const value_type_t &value);
 
   /**
      Clears any filters on this dimension
   */
-  void filterAll();
+  void filter_all();
 
   /**
      Filters records such that the specified function returns truthy when called with this dimension's value
    */
-  void filterWithPredicate(std::function<bool(const value_type_t &)> filterFunction);
+  void filter_with_predicate(std::function<bool(const value_type_t &)> filterFunction);
 
   /**
      Filters records such that the specified function returns truthy when called with this dimension's value
    */
-  void filterFunction(std::function<bool(const value_type_t &)> predicate);
+  void filter_function(std::function<bool(const value_type_t &)> predicate);
 
   /**
      Clears any filters on this dimension
    */
-  void filter() { filterAll();}
+  void filter() { filter_all();}
 
   /**
      Filters records such that this dimension's value is greater than or equal to left, and less than right.
   */
-  void filter(const value_type_t  & left, const value_type_t & right) { filterRange(left, right); }
+  void filter(const value_type_t  & left, const value_type_t & right) { filter_range(left, right); }
 
   /**
      Filters records such that this dimension's value equals value
    */
-  void filter(const value_type_t & value) { filterExact(value); }
+  void filter(const value_type_t & value) { filter_exact(value); }
 
   /**
      Filters records such that the specified function returns truthy when called with this dimension's value
    */
-  void filter(std::function<bool(const value_type_t &)> filterFunction) { filterWithPredicate(filterFunction); }
+  void filter(std::function<bool(const value_type_t &)> filterFunction) { filter_with_predicate(filterFunction); }
 
   /**
      Returns a new array containing the bottom k records, according to the natural order of this dimension.
@@ -122,14 +122,13 @@ struct  Dimension : private DimensionImpl<V, T, isIterable> {
    */
   template <typename AddFunc, typename RemoveFunc, typename InitialFunc>
   auto
-  group(
+  feature(
       AddFunc add_func_,
       RemoveFunc remove_func_,
       InitialFunc initial_func_ )
-      -> Group<value_type_t,
-               decltype(initial_func_()), this_type_t, false>  {
-    auto key =  [](auto v) { return v;};
-    return group(add_func_, remove_func_, initial_func_, key);
+      -> cross::feature<value_type_t,
+                        decltype(initial_func_()), this_type_t, false>  {
+    return feature(add_func_, remove_func_, initial_func_, [](auto v) { return v;});
   }
 
   /**
@@ -137,81 +136,80 @@ struct  Dimension : private DimensionImpl<V, T, isIterable> {
    */
   template <typename AddFunc, typename RemoveFunc, typename InitialFunc, typename KeyFunc>
   auto
-  group(
+  feature(
       AddFunc add_func_,
       RemoveFunc remove_func_,
       InitialFunc initial_func_,
-      KeyFunc key) -> Group<decltype(key(std::declval<value_type_t>())),
-                            decltype(initial_func_()), this_type_t, false>;
+      KeyFunc key) -> cross::feature<decltype(key(std::declval<value_type_t>())),
+                                     decltype(initial_func_()), this_type_t, false>;
 
-  Group<value_type_t, std::size_t, this_type_t, false>
-  group() {
-    return groupReduceCount([](auto v) { return v;});
+
+  auto  feature_count() -> cross::feature<value_type_t, std::size_t, this_type_t, false>{
+    return feature_count([](auto v) { return v;});
   }
 
   /**
      Constructs a new grouping for the given dimension to reduce elements by count 
    */
   template<typename G>
-  auto  group(G key_) -> Group<decltype(key_(std::declval<value_type_t>())),
+  auto  feature(G key_) -> cross::feature<decltype(key_(std::declval<value_type_t>())),
                                 std::size_t, this_type_t, false> {
-    return groupReduceCount(key_);
+    return feature_count(key_);
   }
 
   /**
      Constructs a new grouping for the given dimension to reduce elements by count 
    */
   template<typename K>
-  auto groupReduceCount(K key) ->   Group<decltype(key(std::declval<value_type_t>())),
-                                          std::size_t, this_type_t, false>;
+  auto feature_count(K key) -> cross::feature<decltype(key(std::declval<value_type_t>())),
+                                            std::size_t, this_type_t, false>;
   /**
      Constructs a new grouping for the given dimension to reduce elements by sum
    */
   template<typename ValueFunc>
-  auto groupReduceSum(ValueFunc value)
-      -> Group<value_type_t, decltype(value(record_type_t())), this_type_t, false> {
-    auto key =  [](auto v) { return v;};
-    return groupReduceSum(value, key);
+  auto feature_sum(ValueFunc value)
+      -> cross::feature<value_type_t, decltype(value(record_type_t())), this_type_t, false> {
+    return feature_sum(value, [](auto v) { return v;});
   }
 
   /**
      Constructs a new grouping for the given dimension to reduce elements by sum
    */
   template<typename ValueFunc, typename KeyFunc>
-  auto groupReduceSum(ValueFunc value,
-                       KeyFunc key) -> Group<decltype(key(std::declval<value_type_t>())),
-                                             decltype(value(std::declval<record_type_t>())), this_type_t, false>;
+  auto feature_sum(ValueFunc value,
+                   KeyFunc key) -> cross::feature<decltype(key(std::declval<value_type_t>())),
+                                               decltype(value(std::declval<record_type_t>())), this_type_t, false>;
   /**
      A convenience function for grouping all records into a single group.  
    */
-  template <typename R>
-  Group<std::size_t, R, this_type_t, true>
-  groupAll(
-      std::function<R(R &, const record_type_t &, bool)> add_func_,
-      std::function<R(R &, const record_type_t &, bool)> remove_func_,
-      std::function<R()> initial_func_);
+  template <typename AddFunc, typename RemoveFunc, typename InitialFunc>
+  auto
+  feature_all(
+      AddFunc add_func_,
+      RemoveFunc remove_func_,
+      InitialFunc initial_func_) -> cross::feature<std::size_t, decltype(initial_func_()), this_type_t, true>;
 
   /**
      A convenience function for grouping all records into a single group to reduce by count
    */
-  Group<std::size_t, std::size_t, this_type_t, true> groupAllReduceCount();
+  auto feature_all_count() -> cross::feature<std::size_t, std::size_t, this_type_t, true>;
 
   /**
      A convenience function for grouping all records into a single group to reduce by sum
    */
   template<typename G>
-  auto groupAllReduceSum(G value) -> Group<std::size_t, decltype(value(record_type_t())), this_type_t, true>;
+  auto feature_all_sum(G value) -> cross::feature<std::size_t, decltype(value(record_type_t())), this_type_t, true>;
 
-  /**
-     Equivalent to groupAllReduceCount()
-   */
-  template <typename R>
-  Group<std::size_t, R, this_type_t, true>
-  groupAll() {
-    return groupAllReduceCount();
-  }
+  // /**
+  //    Equivalent to groupAllReduceCount()
+  //  */
+  // template <typename R>
+  // feature<std::size_t, R, this_type_t, true>
+  // groupAll() {
+  //   return groupAllReduceCount();
+  // }
 };
-
+} //namespace cross
 #include "detail/impl/dimension.ipp"
 
 

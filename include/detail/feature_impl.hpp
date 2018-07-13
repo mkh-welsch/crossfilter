@@ -4,8 +4,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Copyright (c) 2018 Dmitry Vinokurov */
 
-#ifndef GROUP_IMPL_H_GUARD
-#define GROUP_IMPL_H_GUARD
+#ifndef FEATURE_IMPL_H_GUARD
+#define FEATURE_IMPL_H_GUARD
 #include <vector>
 #include <functional>
 #include <unordered_map>
@@ -15,16 +15,19 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include "detail/heap.hpp"
 #include "detail/impl/group_index.hpp"
 
-template <typename Key,  typename Reduce, typename Dimension,
-          bool isGroupAll>
-struct GroupImpl;
+namespace cross {
+
+namespace impl {
+// template <typename Key,  typename Reduce, typename Dimension,
+//           bool isGroupAll>
+// struct GroupImpl;
 
 
 template <typename Key, typename Reduce, typename Dimension,
           bool isGroupAll = false>
-struct GroupImpl {
+struct feature_impl {
   static constexpr int REMOVED_INDEX = -1;
-  static constexpr bool isFlatIndex = !Dimension::getIsIterable();
+  static constexpr bool isFlatIndex = !Dimension::get_is_iterable();
 
   typename Dimension::base_type_t *dimension;
 
@@ -45,9 +48,9 @@ struct GroupImpl {
   //                                         std::vector<std::size_t>,
   //                                         std::size_t>::type;
   // std::vector<group_index_t> groupIndex;
-  GroupIndex<isFlatIndex> groupIndex;
+  GroupIndex<isFlatIndex> group_index;
 
-  bool resetNeeded = true;
+  bool reset_needed = true;
 
   std::function<Key(const value_type_t &)> key;
   std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> add_func;
@@ -59,65 +62,65 @@ struct GroupImpl {
   std::function<group_vec_t(const group_vec_t &, std::size_t, std::size_t, std::size_t)>  select_func;
   std::function<group_vec_t &(group_vec_t &, std::size_t, std::size_t)>      sort_func;
 
-  std::size_t dataSize = 0;
+  std::size_t data_size = 0;
 
-  connection_type_t connectionFilter;
-  connection_type_t connectionAdd;
-  connection_type_t connectionRemove;
-  connection_type_t connectionDimension;
+  connection_type_t connection_filter;
+  connection_type_t connection_add;
+  connection_type_t connection_remove;
+  connection_type_t connection_dimension;
 
  public:
-  GroupImpl(typename Dimension::base_type_t *dim, std::function<Key(const value_type_t &)> key_,
+  feature_impl(typename Dimension::base_type_t *dim, std::function<Key(const value_type_t &)> key_,
             std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> add_func_,
             std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> remove_func_,
             std::function<reduce_type_t()> initial_func_)
       : dimension(dim), key(key_), add_func(add_func_),
         remove_func(remove_func_), initial_func(initial_func_) {
-    initSlots();
+    init_slots();
     order([](auto r) { return r;});
   }
 
-  explicit GroupImpl(typename Dimension::base_type_t *dim)
+  explicit feature_impl(typename Dimension::base_type_t *dim)
       : dimension(dim) {
     key = [](value_type_t && r) { return r;};
     order([](auto r) { return r;});
-    initSlots();
+    init_slots();
   }
 
-  GroupImpl(GroupImpl && g)
+  feature_impl(feature_impl && g)
       :dimension(std::move(g.dimension)), groups(std::move(g.groups)),
-       groupIndex(std::move(g.groupIndex)),
-       resetNeeded(g.resetNeeded), key(std::move(g.key)),
+       group_index(std::move(g.group_index)),
+       reset_needed(g.reset_needed), key(std::move(g.key)),
        add_func(std::move(g.add_func)), remove_func(std::move(g.remove_func)),
        initial_func(std::move(g.initial_func)),
        select_func(std::move(g.select_func)), sort_func(std::move(g.sort_func)),
-       dataSize(g.dataSize) {
+       data_size(g.data_size) {
     g.dispose();
-    initSlots();
+    init_slots();
   }
 
-  ~GroupImpl() {
+  ~feature_impl() {
     dispose();
   }
 
-  void initSlots();
+  void init_slots();
 
   void dispose() {
-    connectionRemove.disconnect();
-    connectionAdd.disconnect();
-    connectionFilter.disconnect();
-    connectionDimension.disconnect();
+    connection_remove.disconnect();
+    connection_add.disconnect();
+    connection_filter.disconnect();
+    connection_dimension.disconnect();
   }
 
   void remove(const std::vector<int64_t> &removed);
 
-  void updateOne(std::size_t filterOffset, int filterBitNum,
+  void update_one(std::size_t filter_offset, int filter_bit_num,
                  const std::vector<std::size_t> &added,
-                 const std::vector<std::size_t> &removed, bool notFilter);
+                 const std::vector<std::size_t> &removed, bool not_filter);
 
-  void update(std::size_t filterOffset, int filterBitIndex,
+  void update(std::size_t filter_offset, int filter_bit_index,
               const std::vector<std::size_t> &added,
-              const std::vector<std::size_t> &removed, bool notFilter);
+              const std::vector<std::size_t> &removed, bool not_filter);
 
   // template <bool Enable = true>
   // typename std::enable_if<isGroupAll && Enable>::type
@@ -127,12 +130,12 @@ struct GroupImpl {
 
   //  template <bool Enable = true>
   //  typename std::enable_if<!isGroupAll && Enable>::type
-  void add(const value_vec_t &newData,
-      const std::vector<std::size_t> &newIndexes, std::size_t oldDataSize, std::size_t newDataSize);
+  void add(const value_vec_t &new_data,
+      const std::vector<std::size_t> &new_indexes, std::size_t old_data_size, std::size_t new_data_size);
 
   std::vector<group_type_t> top(std::size_t k);
 
-  void resetOne();
+  void reset_one();
 
   void reset();
 
@@ -140,28 +143,32 @@ struct GroupImpl {
 
   reduce_type_t value();
 
-  GroupImpl<Key, Reduce, Dimension, isGroupAll> &reduce(
+  feature_impl<Key, Reduce, Dimension, isGroupAll> &reduce(
       std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> add_,
       std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> remove_,
       Reduce initial_);
 
-  GroupImpl<Key, Reduce, Dimension, isGroupAll> &reduceCount();
+  feature_impl<Key, Reduce, Dimension, isGroupAll> &reduce_count();
 
-  GroupImpl<Key, Reduce, Dimension, isGroupAll> &
-  reduceSum(std::function<reduce_type_t(const record_type_t &)> value);
+  feature_impl<Key, Reduce, Dimension, isGroupAll> &
+  reduce_sum(std::function<reduce_type_t(const record_type_t &)> value);
 
   template<typename OrderFunc>
-  GroupImpl<Key, Reduce, Dimension, isGroupAll> &
+  feature_impl<Key, Reduce, Dimension, isGroupAll> &
   order(OrderFunc value);
 
-  GroupImpl<Key, Reduce, Dimension, isGroupAll> &orderNatural();
+  feature_impl<Key, Reduce, Dimension, isGroupAll> &order_natural();
 
   std::size_t size() const { return groups.size(); }
   std::vector<group_type_t> & all2() {
     return groups;
   }
 };
-#include "detail/impl/group_impl.ipp"
+#include "detail/impl/feature_impl.ipp"
+} //namespace impl
+} //namespace cross
+
+
 
 
 #endif

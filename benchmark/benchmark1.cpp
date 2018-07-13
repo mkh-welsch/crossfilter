@@ -119,30 +119,30 @@ int main() {
 
   then = mtime();
 
-  CrossFilter<Payment> payments(firstBatch);
-   auto all = payments.groupAll();
+  cross::filter<Payment> payments(firstBatch);
+   auto all = payments.feature_count();
   auto amount = payments.dimension([](auto d)  {return d.amount;});
-  auto amounts = amount.groupReduceCount([](auto d) 
+  auto amounts = amount.feature_count([](auto d) 
                                {
                                  return std::floor(d);
                                });
   auto date = payments.dimension([](auto d)                                  {
                                    return d.date;
                                  });
-  auto dates = date.group([](auto d) 
-                          {
-                            return makedate(d);
-                          });
+  auto dates = date.feature_count([](auto d) 
+                                  {
+                                    return makedate(d);
+                                  });
   auto day = payments.dimension([](auto d) 
                                 {
                                   return makedayofweek(d.date);//d.date.date().day_of_week().as_number();
                                 });
-   auto days = day.group();
+   auto days = day.feature_count();
   auto hour = payments.dimension([](auto d) 
                                  {
                                    return makehours(d.date);// d.date.time_of_day().hours();
                                  });
-   auto hours = hour.group();
+   auto hours = hour.feature_count();
 
   std::cout << "Indexing " << firstSize << " records: " << (mtime() - then) << "ms." << std::endl;
   auto then3 = mtime();
@@ -163,7 +163,7 @@ int main() {
     auto ti = epoch(today - boost::gregorian::days(i));
     for(int j = 0; j < i; j++) {
       auto tj = epoch(today - boost::gregorian::days(j));
-      date.filterRange(ti,tj);
+      date.filter_range(ti,tj);
       k++;
       dates.all();
       days.all();
@@ -175,14 +175,14 @@ int main() {
 
   }
   std::cout << "Filtering by date: " << ((mtime() - then) / double(k)) << "ms/op." << std::endl;
-  date.filterAll();
+  date.filter_all();
 
   then = mtime();
   k = 0;
   //  for(int l = 0; l < 100; l++) {
   for(int i = 0; i < 7; i++) {
     for(int j = i; j < 7; j++) {
-      day.filterRange(i,j);
+      day.filter_range(i,j);
       k++;
       dates.all();
       days.all();
@@ -195,14 +195,14 @@ int main() {
   //  }
   
   std::cout << "Filtering by day: " << ((mtime() - then) / double(k)) << "ms/op." << std::endl;
-  day.filterAll();
+  day.filter_all();
 
   then = mtime();
   k = 0;
 
   for(int i = 0; i < 24; i++) {
     for(int j = i; j < 24; j++) {
-      hour.filterRange(i,j);
+      hour.filter_range(i,j);
       k++;
       dates.all();
       days.all();
@@ -213,13 +213,13 @@ int main() {
     }
   }
   std::cout << "Filtering by hour: " << ((mtime() - then) / double(k)) << "ms/op." << std::endl;
-  hour.filterAll();
+  hour.filter_all();
 
   then = mtime();
   k = 0;
   for(int i = 0; i < 35; i++) {
     for(int j = i; j < 35; j++) {
-      amount.filterRange(i,j);
+      amount.filter_range(i,j);
       k++;
       dates.all();
       days.all();
@@ -230,7 +230,7 @@ int main() {
     }
   }
   std::cout << "Filtering by amount: " << ((mtime() - then) / double(k)) << "ms/op." << std::endl;
-  amount.filterAll();
+  amount.filter_all();
 
   then = mtime();
   payments.remove([](auto, int i)

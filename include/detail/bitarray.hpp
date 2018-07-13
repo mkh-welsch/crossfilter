@@ -18,7 +18,7 @@ class BitArray {
   std::vector<uint8_t> mask;
   std::size_t indexSize = 0;
 
-  int8_t findFirstZeroBit(int8_t value) {
+  int8_t find_first_zero_bit(int8_t value) {
     auto bs = std::bitset<8>(value);
     for ( std::size_t i = 0; i < bs.size(); i++ ) {
       if ( bs[i] == 0 )
@@ -39,7 +39,7 @@ class BitArray {
     return bits.size();
   }
 
-  std::size_t getIndexSize() const {
+  std::size_t get_index_size() const {
     return indexSize;
   }
   void resize(std::size_t newSize) {
@@ -52,10 +52,10 @@ class BitArray {
   }
 
   // return index in bits array and number of bit for coresponding mask
-  std::tuple<std::size_t, int> addRow() {
+  std::tuple<std::size_t, int> add_row() {
     for (std::size_t i = 0; i < mask.size(); i++) {
       if (mask[i] != 255) {
-        int k = findFirstZeroBit(mask[i]);
+        int k = find_first_zero_bit(mask[i]);
         if (k >= 0) {
           auto b = std::bitset<8>(mask[i]);
           b.set(k, true);
@@ -70,7 +70,7 @@ class BitArray {
     mask.push_back(1);
     return std::make_tuple<std::size_t, int>(bits.size()-1, 0);
   }
-  uint8_t getMask(std::size_t i) {
+  uint8_t get_mask(std::size_t i) {
     return mask[i];
   }
   void copy(std::size_t dst, std::size_t src) {
@@ -103,7 +103,7 @@ class BitArray {
     }
     return true;
   }
-  bool zeroExcept(std::size_t index, std::size_t offset, int bitIndex) {
+  bool zero_except(std::size_t index, std::size_t offset, int bitIndex) {
     for (std::size_t i = 0; i < bits.size(); i++) {
       auto bi = bits[i][index];
       
@@ -122,7 +122,7 @@ class BitArray {
     }
       return true;
   }
-  bool zeroExceptMask(std::size_t index, const std::vector<uint8_t> & mask) const {
+  bool zero_except_mask(std::size_t index, const std::vector<uint8_t> & mask) const {
     for (std::size_t i = 0; i < bits.size(); i++) {
       auto v = bits[i][index];
       if (v != 0 && (v & mask[i]) != v)
@@ -131,7 +131,7 @@ class BitArray {
     return true;
   }
 
-  bool onlyExcept(std::size_t index, std::size_t offset1, int bitIndex1, std::size_t offset2, int bitIndex2) {
+  bool only_except(std::size_t index, std::size_t offset1, int bitIndex1, std::size_t offset2, int bitIndex2) {
     auto zero = std::bitset<8>(0xff);
     zero.flip(bitIndex1);
     auto onlyOne = std::bitset<8>(0);
