@@ -6,6 +6,22 @@ Copyright (c) 2018 Dmitry Vinokurov */
 
 #ifndef SIGNAL_BASE_H_GUARD
 #define  SIGNAL_BASE_H_GUARD
+#define USE_NOD_SIGNALS = 1
+
+#if defined  USE_NOD_SIGNALS
+#include "3dparty/nod.hpp"
+namespace signals {
+template <typename F> using signal = nod::signal<F>;
+using connection = nod::connection;
+}
+#else
+#include <boost/signals2.hpp>
+namespace signals {
+template <typename F> using signal = boost::signals2::signal<F>;
+using connection = boost::signals2::connection;
+}
+#endif
+
 #include <memory>
 template<typename Signal, typename Connection>
 struct MovableSignal {

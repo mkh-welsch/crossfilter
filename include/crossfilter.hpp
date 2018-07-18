@@ -23,21 +23,6 @@ a C++14 port of the famous crossfilter.js lib.
 #ifndef CROSSFILTER_H_GUARD
 #define CROSSFILTER_H_GUARD
 
-#define USE_NOD_SIGNALS = 1
-
-#if defined  USE_NOD_SIGNALS
-#include "3dparty/nod.hpp"
-namespace signals {
-template <typename F> using signal = nod::signal<F>;
-using connection = nod::connection;
-}
-#else
-#include <boost/signals2.hpp>
-namespace signals {
-template <typename F> using signal = boost::signals2::signal<F>;
-using connection = boost::signals2::connection;
-}
-#endif
 
 
 #include "detail/crossfilter.hpp"

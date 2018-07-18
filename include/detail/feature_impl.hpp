@@ -14,7 +14,9 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <type_traits>
 #include "detail/heap.hpp"
 #include "detail/impl/group_index.hpp"
-
+#include "detail/filter_base.hpp"
+#include "detail/crossfilter_impl.hpp"
+#include "detail/dimension_impl.hpp"
 namespace cross {
 
 namespace impl {
@@ -23,26 +25,28 @@ namespace impl {
 // struct GroupImpl;
 
 
-template <typename Key, typename Reduce, typename Dimension,
-          bool isGroupAll = false>
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool isGroupAll = false, bool is_iterable = false>
 struct feature_impl {
   static constexpr int REMOVED_INDEX = -1;
-  static constexpr bool isFlatIndex = !Dimension::get_is_iterable();
+  static constexpr bool isFlatIndex = !is_iterable;
 
-  typename Dimension::base_type_t *dimension;
+  filter_feature_base<Record, Dimension> *dimension;
 
   using reduce_type_t = Reduce;
   using key_type_t = Key;
-  using value_type_t = typename Dimension::value_type_t;
-  using record_type_t = typename Dimension::record_type_t;
+  using value_type_t = Dimension; //typename filter_feature_base<Record>::value_type_t;
+  using record_type_t = Record;
   using group_type_t = std::pair<key_type_t, reduce_type_t>;
   using value_vec_t = std::vector<value_type_t>;
   using group_vec_t = std::vector<group_type_t>;
 
-  template<typename F> using signal_type_t = typename Dimension::template signal_type_t<F>;
-  using connection_type_t = typename Dimension::connection_type_t;
+  template<typename F> using signal_type_t = typename filter_feature_base<Record, Dimension>::template signal_type_t<F>;
+  using connection_type_t = typename filter_feature_base<Record,Dimension>::connection_type_t;
 
   std::vector<group_type_t> groups;
+  template <typename T,typename H> friend struct impl::filter_impl;
+  template <typename V,typename T,bool> friend struct impl::dimension_impl;
 
   // using group_index_t =  typename std::conditional<Dimension::getIsIterable(),
   //                                         std::vector<std::size_t>,
@@ -70,7 +74,7 @@ struct feature_impl {
   connection_type_t connection_dimension;
 
  public:
-  feature_impl(typename Dimension::base_type_t *dim, std::function<Key(const value_type_t &)> key_,
+  feature_impl(filter_feature_base<Record, Dimension> *dim, std::function<Key(const value_type_t &)> key_,
             std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> add_func_,
             std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> remove_func_,
             std::function<reduce_type_t()> initial_func_)
@@ -80,7 +84,7 @@ struct feature_impl {
     order([](auto r) { return r;});
   }
 
-  explicit feature_impl(typename Dimension::base_type_t *dim)
+  explicit feature_impl(filter_feature_base<Record, Dimension> *dim)
       : dimension(dim) {
     key = [](value_type_t && r) { return r;};
     order([](auto r) { return r;});
@@ -130,6 +134,7 @@ struct feature_impl {
 
   //  template <bool Enable = true>
   //  typename std::enable_if<!isGroupAll && Enable>::type
+
   void add(const value_vec_t &new_data,
       const std::vector<std::size_t> &new_indexes, std::size_t old_data_size, std::size_t new_data_size);
 
@@ -143,21 +148,21 @@ struct feature_impl {
 
   reduce_type_t value();
 
-  feature_impl<Key, Reduce, Dimension, isGroupAll> &reduce(
-      std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> add_,
-      std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> remove_,
-      Reduce initial_);
+  // feature_impl<Key, Reduce, Record, isGroupAll> &reduce(
+  //     std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> add_,
+  //     std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> remove_,
+  //     Reduce initial_);
 
-  feature_impl<Key, Reduce, Dimension, isGroupAll> &reduce_count();
+  // feature_impl<Key, Reduce, Record, isGroupAll> &reduce_count();
 
-  feature_impl<Key, Reduce, Dimension, isGroupAll> &
-  reduce_sum(std::function<reduce_type_t(const record_type_t &)> value);
+  // feature_impl<Key, Reduce, Record, isGroupAll> &
+  // reduce_sum(std::function<reduce_type_t(const record_type_t &)> value);
 
   template<typename OrderFunc>
-  feature_impl<Key, Reduce, Dimension, isGroupAll> &
+  feature_impl<Key, Reduce, Record, Dimension, isGroupAll, is_iterable> &
   order(OrderFunc value);
 
-  feature_impl<Key, Reduce, Dimension, isGroupAll> &order_natural();
+  feature_impl<Key, Reduce, Record, Dimension, isGroupAll, is_iterable> &order_natural();
 
   std::size_t size() const { return groups.size(); }
   std::vector<group_type_t> & all2() {

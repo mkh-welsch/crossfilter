@@ -224,10 +224,13 @@ BOOST_AUTO_TEST_CASE(can_remove_records_while_filtering) {
   auto positive = foo.feature_count([](auto value) { return value > 0; });
   auto allSum = data.feature_sum([](auto d) { return d.foo; });
   data.add(std::vector<Rec3>{{1}, {2}, {3}});
-
+  std::cout << "a1" << std::endl;
   BOOST_CHECK_EQUAL(allSum.value(),6);
+  std::cout << "a2" << std::endl;
   BOOST_TEST(positive.all() == (std::vector<std::pair<bool,std::size_t>>{{true, 3}}), boost::test_tools::per_element());
+  std::cout << "a3" << std::endl;
   foo.filter(2);
+  std::cout << "a4" << std::endl;
   BOOST_CHECK_EQUAL(allSum.value(),2);
   data.remove([](auto d, int) { return d.foo == 3;});
   BOOST_CHECK_EQUAL(allSum.value(),2);

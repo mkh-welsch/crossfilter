@@ -7,58 +7,58 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include "crossfilter.hpp"
 namespace cross {
 
-template<typename T>
+template<typename T, typename H>
 template<typename C>
 inline
-typename std::enable_if<!std::is_same<C, T>::value, filter<T>&>::type
-filter<T>::add(const C &newData) {
-  impl::filter_impl<T>::add(newData);
+typename std::enable_if<!std::is_same<C, T>::value, filter<T,H>&>::type
+filter<T,H>::add(const C &new_data, bool allow_duplicates) {
+  impl_type_t::add(new_data, allow_duplicates);
   return *this;
 }
 
-template<typename T>
+template<typename T, typename H>
 inline
-filter<T> & filter<T>::add(const T &newData) {
-  impl::filter_impl<T>::add(newData);
+filter<T,H> & filter<T,H>::add(const T &new_data, bool allow_duplicates) {
+  impl_type_t::add(new_data, allow_duplicates);
   return *this;
 }
 
-template<typename T>
+template<typename T, typename H>
 inline
-std::size_t filter<T>::size() const { return impl::filter_impl<T>::size(); }
+std::size_t filter<T,H>::size() const { return impl_type_t::size(); }
 
 
 
 // removes all records matching the predicate (ignoring filters).
-template<typename T>
+template<typename T, typename H>
 inline
-void filter<T>::remove(std::function<bool(const T&, int)> predicate) {
-  impl::filter_impl<T>::remove(predicate);
+void filter<T,H>::remove(std::function<bool(const T&, int)> predicate) {
+  impl_type_t::remove(predicate);
 }
 
 // Removes all records that match the current filters
-template<typename T>
+template<typename T, typename H>
 inline
-void filter<T>::remove() {
-  impl::filter_impl<T>::remove();
+void filter<T,H>::remove() {
+  impl_type_t::remove();
 }
 
-template<typename T>
+template<typename T, typename H>
 template <typename AddFunc, typename RemoveFunc, typename InitialFunc>
 inline
 auto
-filter<T>::feature(
+filter<T,H>::feature(
     AddFunc add_func_,
     RemoveFunc remove_func_,
     InitialFunc initial_func_) -> cross::feature<std::size_t,
-                                        decltype(initial_func_()), this_type_t, true> {
-  return impl::filter_impl<T>::feature(add_func_, remove_func_, initial_func_);
+                                        decltype(initial_func_()), T, value_type_t, true, false> {
+  return impl_type_t::feature(add_func_, remove_func_, initial_func_);
 }
 
-template <typename T>
+template <typename T, typename H>
 inline
 auto
-filter<T>::feature_count() -> cross::feature<std::size_t, std::size_t, this_type_t, true> {
+filter<T,H>::feature_count() -> cross::feature<std::size_t, std::size_t, T, value_type_t, true, false> {
   return feature(
       [](std::size_t & r, const record_type_t &, bool ) {
         return r + 1;
@@ -73,11 +73,11 @@ filter<T>::feature_count() -> cross::feature<std::size_t, std::size_t, this_type
       });
 }
 
-template<typename T>
+template<typename T, typename H>
 template<typename G>
 inline
-auto filter<T>::feature_sum(G value)
-    -> cross::feature<std::size_t, decltype(value(record_type_t())), this_type_t, true> {
+auto filter<T,H>::feature_sum(G value)
+    -> cross::feature<std::size_t, decltype(value(record_type_t())), T, value_type_t, true, false> {
   using R = decltype(value(record_type_t()));
 
   return feature(
@@ -92,10 +92,10 @@ auto filter<T>::feature_sum(G value)
         });
   }
 
-// template<typename T>
+// template<typename T, typename H>
 // inline
-// feature<std::size_t, std::size_t, typename filter<T>::this_type_t, true>
-// filter<T>::feature() {
+// feature<std::size_t, std::size_t, typename filter<T,H>::this_type_t, true>
+// filter<T,H>::feature() {
 //   return feature_count();
 // }
 

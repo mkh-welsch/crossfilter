@@ -78,7 +78,7 @@ struct Fixture {
 };
 
 struct Fixture2 : public Fixture {
-  cross::feature<std::size_t,std::size_t,cross::dimension<int,Record,false>,true> count;
+  cross::feature<std::size_t,std::size_t,Record,int,true> count;
   Fixture2()
       :Fixture(),count(quantity.feature_all_count()) {
   }

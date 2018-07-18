@@ -13,6 +13,19 @@ struct Payment {
   uint64_t date;
   double amount;
 };
+namespace std {
+template<> struct hash<Payment> {
+  typedef Payment argument_type;
+  typedef std::size_t result_type;
+  result_type operator()(argument_type const& s) const noexcept
+  {
+    result_type const h1 ( std::hash<uint64_t>{}(s.date) );
+    result_type const h2 ( std::hash<double>{}(s.amount) );
+    return (h1 ^ (h2 << 1)) ; // or use boost::hash_combine (see Discussion)
+  }
+};
+}
+
 double drandom(int w) {
   auto r = std::rand();
   auto r1 = r/(double)RAND_MAX;
@@ -21,6 +34,7 @@ double drandom(int w) {
 
   return r3;
 }
+
 uint64_t mtime() {
   return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }

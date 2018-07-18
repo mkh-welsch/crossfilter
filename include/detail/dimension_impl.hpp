@@ -16,7 +16,7 @@ Copyright (c) 2018 Dmitry Vinokurov */
 
 namespace cross {
 
-template <typename Key, typename Reduce, typename Dimension, bool> struct feature;
+template <typename, typename, typename, typename, bool, bool> struct feature;
 
 namespace impl {
 
@@ -33,21 +33,22 @@ struct val {
   struct value_type2 : std::enable_if<!isIterable, Value> {};
 };
 
-template<typename T> struct filter_impl;
+//template<typename T, typename H> struct filter_impl;
 
-template <typename V, typename T, bool isIterable> struct dimension_impl {
+template <typename V, typename T, bool isIterable> struct dimension_impl : public filter_feature_base<T,typename trait::cond_type<V, isIterable>::type> {
   using value_type_t = typename trait::cond_type<V, isIterable>::type;
-  using parent_type_t = typename filter_impl<T>::this_type_t;
+  using parent_type_t = filter_dim_base<T>;
   using field_type_t = V;
-  using record_type_t = typename filter_impl<T>::record_type_t;
+  using record_type_t = typename filter_dim_base<T>::record_type_t;
   using this_type_t = dimension<V, T, isIterable>;
-  using data_iterator = typename filter_impl<T>::data_iterator;
+  using data_iterator = typename filter_dim_base<T>::data_iterator;
 
-  template<typename F> using signal_type_t = typename filter_impl<T>::template signal_type_t<F>;
-  using connection_type_t = typename filter_impl<T>::connection_type_t;
-  
-  template <typename Key, typename Reduce, typename Dimension, bool>
-  friend struct feature;
+  template<typename F> using signal_type_t = typename filter_dim_base<T>::template signal_type_t<F>;
+  using connection_type_t = typename filter_dim_base<T>::connection_type_t;
+
+  template <typename, typename, typename, typename,  bool>  friend struct feature;
+
+  template <typename, typename> friend struct filter_impl;
 
   std::vector<value_type_t> values;
   std::vector<std::size_t> indexes;
@@ -57,9 +58,9 @@ template <typename V, typename T, bool isIterable> struct dimension_impl {
   std::vector<std::size_t> removed;
   std::size_t old_data_size = 0;
 
-  filter_impl<T> * crossfilter = nullptr;
-  std::size_t dimension_offset;
-  int dimension_bit_index;
+  filter_dim_base<T> * crossfilter = nullptr;
+//  std::size_t dimension_offset;
+//  int dimension_bit_index;
 
   std::size_t low = 0;
   std::size_t high = 0;
@@ -101,28 +102,33 @@ template <typename V, typename T, bool isIterable> struct dimension_impl {
 
   //  void  addIterable(data_iterator begin, data_iterator end);
 
-  bool zero_except(std::size_t index);
+  bool zero_except(std::size_t index) override;
 
-  bool only_except(std::size_t index, std::size_t offset, int bitIndex);
+  bool
+  zero_except(std::size_t index, std::size_t offset, int bit_index) override {
+    return crossfilter->zero_except(index, offset, bit_index);
+  }
 
-  record_type_t &get(std::size_t index);
+  bool only_except(std::size_t index, std::size_t offset, int bitIndex) override;
 
-  record_type_t &get_raw(std::size_t index);
+  // record_type_t &get(std::size_t index);
+
+  // record_type_t &get_raw(std::size_t index);
 
   connection_type_t connect_filter_slot(
       std::function<void(std::size_t filter_offset, int filter_bit_num,
                          const std::vector<std::size_t> &,
-                         const std::vector<std::size_t> &, bool)> slot);
+                         const std::vector<std::size_t> &, bool)> slot) override;
 
   connection_type_t
   connect_add_slot(std::function<void(const std::vector<value_type_t> &,
-                                    const std::vector<std::size_t> &, std::size_t, std::size_t)> slot);
+                                    const std::vector<std::size_t> &, std::size_t, std::size_t)> slot) override;
 
   connection_type_t
-  connect_remove_slot(std::function<void(const std::vector<int64_t> &)> slot);
+  connect_remove_slot(std::function<void(const std::vector<int64_t> &)> slot) override;
 
   connection_type_t
-  connect_dispose_slot(std::function<void()> slot);
+  connect_dispose_slot(std::function<void()> slot) override;
 
   void remove_data(const std::vector<int64_t> &re_index);
 
@@ -146,12 +152,12 @@ template <typename V, typename T, bool isIterable> struct dimension_impl {
  public:
   dimension_impl() {}
 
-  dimension_impl(filter_impl<T> *cf, std::tuple<std::size_t, int> filter_pos_,
+  dimension_impl(filter_dim_base<T> *cf, std::tuple<std::size_t, int> filter_pos_,
             std::function<field_type_t(const record_type_t &)> getter_);
 
   dimension_impl(dimension_impl<V, T, isIterable> && dim)
-      : values(dim.values), indexes(dim.indexes), crossfilter(dim.crossfilter),
-        dimension_offset(dim.dimension_offset), dimension_bit_index(dim.dimension_bit_index),
+      : filter_feature_base<T,value_type_t>(std::move(dim)),values(dim.values), indexes(dim.indexes), crossfilter(dim.crossfilter),
+//        dimension_offset(dim.dimension_offset), dimension_bit_index(dim.dimension_bit_index),
         low(dim.low), high(dim.high), iterables_index_count(dim.iterables_index_count),
         iterables_empty_rows(dim.iterables_empty_rows), refilter(dim.refilter),
         getter(dim.getter), refilter_function_flag(dim.refilter_function_flag),
@@ -180,8 +186,8 @@ template <typename V, typename T, bool isIterable> struct dimension_impl {
     values = std::move(dim.values);
     indexes = std::move(dim.indexes);
     crossfilter = std::move(dim.crossfilter);
-    dimension_offset = dim.dimension_offset;
-    dimension_bit_index = dim.dimension_bit_index;
+    this->dimension_offset = dim.dimension_offset;
+    this->dimension_bit_index = dim.dimension_bit_index;
     low = dim.low;
     high = dim.high;
     iterables_index_count = std::move(dim.iterables_index_count);
@@ -238,20 +244,24 @@ template <typename V, typename T, bool isIterable> struct dimension_impl {
   feature(std::function<K(const value_type_t &)> key,
           std::function<R(R &, const record_type_t &, bool)> add_func_,
           std::function<R(R &, const record_type_t &, bool)> remove_func_,
-          std::function<R()> initial_func_) -> cross::feature<K, R, this_type_t, false>;
+          std::function<R()> initial_func_) -> cross::feature<K, R, T, value_type_t, false, isIterable>;
   
   template <typename AddFunc, typename RemoveFunc, typename InitialFunc>
   auto 
   feature_all(AddFunc add_func_,
               RemoveFunc remove_func_,
-              InitialFunc initial_func_) ->  cross::feature<std::size_t, decltype(initial_func_()), this_type_t, true>;
+              InitialFunc initial_func_) ->  cross::feature<std::size_t, decltype(initial_func_()), T, value_type_t, true, isIterable>;
 
   std::size_t translate_index(std::size_t index) const {
       return indexes[index];
   }
-  static constexpr  bool get_is_iterable() {
-    return isIterable;
+  const T & get_raw(std::size_t index) const override {
+    return crossfilter->get_raw(index);
   }
+
+//  static constexpr  bool get_is_iterable() {
+//    return isIterable;
+//  }
   void filter1(std::vector<std::size_t> & added, std::vector<std::size_t>& removed, std::size_t filterLowIndex, std::size_t filterHighIndex);
   void filter2(std::vector<std::size_t> & added, std::vector<std::size_t>& removed, std::size_t filterLowIndex, std::size_t filterHighIndex);
 };

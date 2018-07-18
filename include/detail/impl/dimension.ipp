@@ -10,7 +10,7 @@ namespace cross {
 
 template<typename V, typename T, bool isIterable>
 inline
-dimension<V, T, isIterable>::dimension(impl::filter_impl<T> *cf, std::tuple<std::size_t, int> filter_pos_,
+dimension<V, T, isIterable>::dimension(impl::filter_dim_base<T> *cf, std::tuple<std::size_t, int> filter_pos_,
                                    std::function<field_type_t(const record_type_t &)> getter_)
     : impl::dimension_impl<V, T, isIterable>(cf, filter_pos_, getter_) {
 }
@@ -75,7 +75,7 @@ auto dimension<V, T, isIterable>::feature(
     RemoveFunc remove_func_,
     InitialFunc initial_func_,
     KeyFunc key) -> cross::feature<decltype(key(std::declval<value_type_t>())),
-                          decltype(initial_func_()), this_type_t, false> {
+                          decltype(initial_func_()), T, value_type_t, false, isIterable> {
   using K = decltype(key(std::declval<value_type_t>()));
   using R = decltype(initial_func_());
   return impl::dimension_impl<V, T, isIterable>::template feature<K, R>(key, add_func_, remove_func_, initial_func_);
@@ -87,7 +87,7 @@ inline
 auto
 dimension<V, T, isIterable>::feature_count(F key) ->
     cross::feature<decltype(key(std::declval<value_type_t>())),
-          std::size_t, this_type_t, false> {
+          std::size_t, T, value_type_t, false, isIterable> {
   return feature(
       [](std::size_t & r, const record_type_t &, bool ) {
         r++;
@@ -109,7 +109,7 @@ inline
 auto dimension<V, T, isIterable>::feature_sum(ValueFunc value,
                                                           KeyFunc key)
     -> cross::feature<decltype(key(std::declval<value_type_t>())),
-                      decltype(value(std::declval<record_type_t>())), this_type_t, false> {
+                      decltype(value(std::declval<record_type_t>())), T, value_type_t, false, isIterable> {
   return feature(
       [value](auto & r, const auto & rec, bool) {
         r += value(rec);
@@ -132,7 +132,7 @@ auto
 dimension<V, T, isIterable>::feature_all(
     AddFunc add_func_,
     RemoveFunc remove_func_,
-    InitialFunc initial_func_) -> cross::feature<std::size_t, decltype(initial_func_()), this_type_t, true> {
+    InitialFunc initial_func_) -> cross::feature<std::size_t, decltype(initial_func_()), T, value_type_t, true, isIterable> {
   return impl::dimension_impl<V, T, isIterable>::template feature_all(add_func_, remove_func_, initial_func_);
 }
 
@@ -140,7 +140,7 @@ dimension<V, T, isIterable>::feature_all(
 template<typename V, typename T, bool  isIterable>
 inline
 auto
-dimension<V, T, isIterable>::feature_all_count() -> cross::feature<std::size_t, std::size_t, this_type_t, true> {
+dimension<V, T, isIterable>::feature_all_count() -> cross::feature<std::size_t, std::size_t, T, value_type_t, true, isIterable> {
     return feature_all(
         [](std::size_t & r, const record_type_t &, bool ) {
           return r + 1;
@@ -157,7 +157,7 @@ template<typename V, typename T, bool isIterable>
 template<typename G>
 inline
 auto dimension<V, T, isIterable>::feature_all_sum(G value)
-    -> cross::feature<std::size_t, decltype(value(record_type_t())), this_type_t, true> {
+    -> cross::feature<std::size_t, decltype(value(record_type_t())), T, value_type_t, true, isIterable> {
   using reduce_type = decltype(value(record_type_t()));
   return feature_all(
       [value](reduce_type & r, const record_type_t & rec, bool) {

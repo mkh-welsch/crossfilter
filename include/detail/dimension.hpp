@@ -13,7 +13,7 @@ Copyright (c) 2018 Dmitry Vinokurov */
 //#include <boost/signals2.hpp>
 #include "detail/dimension_impl.hpp"
 namespace cross {
-template <typename K, typename R, typename P, bool> struct feature;
+template <typename, typename, typename, typename,  bool, bool> struct feature;
 
 template <typename V, typename T, bool isIterable>
 struct  dimension : private impl::dimension_impl<V, T, isIterable> {
@@ -22,18 +22,26 @@ struct  dimension : private impl::dimension_impl<V, T, isIterable> {
   using record_type_t = typename impl::dimension_impl<V, T, isIterable>::record_type_t;
   using this_type_t = dimension<V, T, isIterable>;
   using base_type_t = impl::dimension_impl<V,T,isIterable>;
+  using data_iterator = typename impl::dimension_impl<V,T,isIterable>::data_iterator;
   using connection_type_t = typename impl::dimension_impl<V,T,isIterable>::connection_type_t;
   template<typename F> using signal_type_t = typename impl::dimension_impl<V,T,isIterable>::template signal_type_t<F>;
+
+  template <typename, typename> friend struct filter_impl;
+
   static constexpr  bool get_is_iterable() {
     return isIterable;
   }
 
+  void add(data_iterator begin, data_iterator end) {
+    impl::dimension_impl<V,T,isIterable>::add(begin,end);
+  }
+ public:
 
   //  static const std::function<value_type_t(const value_type_t &)> identity_function =
 
   dimension() {}
 
-  dimension(impl::filter_impl<T> *cf, std::tuple<std::size_t, int> filterPos_,
+  dimension(impl::filter_dim_base<T> *cf, std::tuple<std::size_t, int> filterPos_,
             std::function<field_type_t(const record_type_t &)> getter_);
 
   dimension(dimension<V, T, isIterable> && dim)
@@ -127,7 +135,7 @@ struct  dimension : private impl::dimension_impl<V, T, isIterable> {
       RemoveFunc remove_func_,
       InitialFunc initial_func_ )
       -> cross::feature<value_type_t,
-                        decltype(initial_func_()), this_type_t, false>  {
+                        decltype(initial_func_()), T, value_type_t, false, isIterable>  {
     return feature(add_func_, remove_func_, initial_func_, [](auto v) { return v;});
   }
 
@@ -141,10 +149,10 @@ struct  dimension : private impl::dimension_impl<V, T, isIterable> {
       RemoveFunc remove_func_,
       InitialFunc initial_func_,
       KeyFunc key) -> cross::feature<decltype(key(std::declval<value_type_t>())),
-                                     decltype(initial_func_()), this_type_t, false>;
+                                     decltype(initial_func_()), T, value_type_t, false, isIterable>;
 
 
-  auto  feature_count() -> cross::feature<value_type_t, std::size_t, this_type_t, false>{
+  auto  feature_count() -> cross::feature<value_type_t, std::size_t, T, value_type_t, false, isIterable>{
     return feature_count([](auto v) { return v;});
   }
 
@@ -153,7 +161,7 @@ struct  dimension : private impl::dimension_impl<V, T, isIterable> {
    */
   template<typename G>
   auto  feature(G key_) -> cross::feature<decltype(key_(std::declval<value_type_t>())),
-                                std::size_t, this_type_t, false> {
+                                          std::size_t, T, value_type_t, false, isIterable> {
     return feature_count(key_);
   }
 
@@ -162,13 +170,13 @@ struct  dimension : private impl::dimension_impl<V, T, isIterable> {
    */
   template<typename K>
   auto feature_count(K key) -> cross::feature<decltype(key(std::declval<value_type_t>())),
-                                            std::size_t, this_type_t, false>;
+                                              std::size_t, T, value_type_t, false, isIterable>;
   /**
      Constructs a new grouping for the given dimension to reduce elements by sum
    */
   template<typename ValueFunc>
   auto feature_sum(ValueFunc value)
-      -> cross::feature<value_type_t, decltype(value(record_type_t())), this_type_t, false> {
+      -> cross::feature<value_type_t, decltype(value(record_type_t())), T, value_type_t, false, isIterable> {
     return feature_sum(value, [](auto v) { return v;});
   }
 
@@ -178,7 +186,7 @@ struct  dimension : private impl::dimension_impl<V, T, isIterable> {
   template<typename ValueFunc, typename KeyFunc>
   auto feature_sum(ValueFunc value,
                    KeyFunc key) -> cross::feature<decltype(key(std::declval<value_type_t>())),
-                                               decltype(value(std::declval<record_type_t>())), this_type_t, false>;
+                                                  decltype(value(std::declval<record_type_t>())), T, value_type_t, false, isIterable>;
   /**
      A convenience function for grouping all records into a single group.  
    */
@@ -187,18 +195,18 @@ struct  dimension : private impl::dimension_impl<V, T, isIterable> {
   feature_all(
       AddFunc add_func_,
       RemoveFunc remove_func_,
-      InitialFunc initial_func_) -> cross::feature<std::size_t, decltype(initial_func_()), this_type_t, true>;
+      InitialFunc initial_func_) -> cross::feature<std::size_t, decltype(initial_func_()), T, value_type_t, true, isIterable>;
 
   /**
      A convenience function for grouping all records into a single group to reduce by count
    */
-  auto feature_all_count() -> cross::feature<std::size_t, std::size_t, this_type_t, true>;
+  auto feature_all_count() -> cross::feature<std::size_t, std::size_t, T, value_type_t, true, isIterable>;
 
   /**
      A convenience function for grouping all records into a single group to reduce by sum
    */
   template<typename G>
-  auto feature_all_sum(G value) -> cross::feature<std::size_t, decltype(value(record_type_t())), this_type_t, true>;
+  auto feature_all_sum(G value) -> cross::feature<std::size_t, decltype(value(record_type_t())), T, value_type_t, true, isIterable>;
 
   // /**
   //    Equivalent to groupAllReduceCount()

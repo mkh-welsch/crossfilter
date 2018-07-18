@@ -5,10 +5,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Copyright (c) 2018 Dmitry Vinokurov */
 
 #include <map>
-template <typename Key, typename Reduce, typename Dimension,
-          bool isGroupAll>
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool is_group_all, bool is_iterable>
 inline
-void feature_impl<Key, Reduce, Dimension, isGroupAll>::init_slots() {
+void feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::init_slots() {
   auto filter_slot = [this](std::size_t filter_offset, int filter_bit_num,
                            const std::vector<std::size_t> &added,
                            const std::vector<std::size_t> &removed, bool not_filter) {
@@ -30,11 +30,11 @@ void feature_impl<Key, Reduce, Dimension, isGroupAll>::init_slots() {
   connection_dimension = dimension->connect_dispose_slot([this]() { dispose();});
 }
 
-template <typename Key, typename Reduce, typename Dimension,
-          bool isGroupAll>
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool is_group_all, bool is_iterable>
 inline
-void feature_impl<Key, Reduce, Dimension, isGroupAll>::remove(const std::vector<int64_t> &removed) {
-  if(isGroupAll)
+void feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::remove(const std::vector<int64_t> &removed) {
+  if(is_group_all)
     return;
 
   std::vector<int> seen_groups(groups.size(),0);
@@ -95,13 +95,13 @@ void feature_impl<Key, Reduce, Dimension, isGroupAll>::remove(const std::vector<
 }
 
 
-template <typename Key, typename Reduce, typename Dimension,
-          bool isGroupAll>
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool is_group_all, bool is_iterable>
 inline
-void feature_impl<Key, Reduce, Dimension, isGroupAll>::update_one(std::size_t filter_offset, int filter_bit_index,
-                                                              const std::vector<std::size_t> &added,
-                                                              const std::vector<std::size_t> &removed,
-                                                              bool not_filter) {
+void feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::update_one(std::size_t filter_offset, int filter_bit_index,
+                                                                          const std::vector<std::size_t> &added,
+                                                                          const std::vector<std::size_t> &removed,
+                                                                          bool not_filter) {
   if ((filter_bit_index > 0 && dimension->dimension_offset == filter_offset &&
        dimension->dimension_bit_index == filter_bit_index) ||
       reset_needed)
@@ -125,21 +125,24 @@ void feature_impl<Key, Reduce, Dimension, isGroupAll>::update_one(std::size_t fi
                 });
 }
 
-template <typename Key, typename Reduce, typename Dimension,
-          bool isGroupAll>
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool is_group_all, bool is_iterable>
 inline
-void feature_impl<Key, Reduce, Dimension, isGroupAll>::update(std::size_t filter_offset, int filter_bit_index,
-                                                           const std::vector<std::size_t> &added,
-                                                           const std::vector<std::size_t> &removed,
-                                                           bool not_filter) {
-  if (isGroupAll && isFlatIndex) {
+void feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::update(std::size_t filter_offset, int filter_bit_index,
+                                                                      const std::vector<std::size_t> &added,
+                                                                      const std::vector<std::size_t> &removed,
+                                                                      bool not_filter) {
+  if (is_group_all && isFlatIndex) {
     update_one(filter_offset, filter_bit_index, added, removed, not_filter);
     return;
   }
-
-  if ((dimension->dimension_offset == filter_offset &&
-       dimension->dimension_bit_index == filter_bit_index) ||
-      reset_needed)
+  bool b1= dimension->dimension_offset == filter_offset;
+  bool b2 = dimension->dimension_bit_index == filter_bit_index;
+  (void)b1;
+  (void)b2;
+  bool b = (dimension->dimension_offset == filter_offset &&
+            dimension->dimension_bit_index == filter_bit_index);
+  if ( b || reset_needed)
     return;
 
   for(auto i : added) {
@@ -187,12 +190,12 @@ void feature_impl<Key, Reduce, Dimension, isGroupAll>::update(std::size_t filter
   }
 }
 
-template <typename Key, typename Reduce, typename Dimension,
-          bool isGroupAll>
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool is_group_all, bool is_iterable>
 inline
-void feature_impl<Key, Reduce, Dimension, isGroupAll>::add(const value_vec_t &new_data,
-                                                   const std::vector<std::size_t> &new_data_index,
-                                                   std::size_t old_data_size, std::size_t new_data_size) {
+void feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::add(const value_vec_t &new_data,
+                                                                   const std::vector<std::size_t> &new_data_index,
+                                                                   std::size_t old_data_size, std::size_t new_data_size) {
   if (new_data.empty()) {
     group_index.resize(group_index.size() + new_data_size);
     return;
@@ -302,20 +305,20 @@ void feature_impl<Key, Reduce, Dimension, isGroupAll>::add(const value_vec_t &ne
   std::swap(group_index, new_group_index);
 }
 
-template <typename Key, typename Reduce, typename Dimension,
-          bool isGroupAll>
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool is_group_all, bool is_iterable>
 inline
-std::vector<typename feature_impl<Key, Reduce, Dimension, isGroupAll>::group_type_t>
-feature_impl<Key, Reduce, Dimension, isGroupAll>::top(std::size_t k) {
+std::vector<typename feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::group_type_t>
+feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::top(std::size_t k) {
   auto &t = all();
   auto top = select_func(t, 0, groups.size(), k);
   return sort_func(top, 0, top.size());
 }
 
-template <typename Key, typename Reduce, typename Dimension,
-          bool isGroupAll>
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool is_group_all, bool is_iterable>
 inline
-void feature_impl<Key, Reduce, Dimension, isGroupAll>::reset_one() {
+void feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::reset_one() {
   if (groups.empty())
       groups.push_back(group_type_t());
 
@@ -333,11 +336,11 @@ void feature_impl<Key, Reduce, Dimension, isGroupAll>::reset_one() {
   }
 }
 
-template <typename Key, typename Reduce, typename Dimension,
-          bool isGroupAll>
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool is_group_all, bool is_iterable>
 inline
-void feature_impl<Key, Reduce, Dimension, isGroupAll>::reset() {
-  if (isGroupAll && isFlatIndex) {
+void feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::reset() {
+  if (is_group_all && isFlatIndex) {
     reset_one();
     return;
   }
@@ -360,11 +363,11 @@ void feature_impl<Key, Reduce, Dimension, isGroupAll>::reset() {
 }
 
 
-template <typename Key, typename Reduce, typename Dimension,
-          bool isGroupAll>
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool is_group_all, bool is_iterable>
 inline
-std::vector<typename feature_impl<Key, Reduce, Dimension, isGroupAll>::group_type_t> &
-feature_impl<Key, Reduce, Dimension, isGroupAll>::all() {
+std::vector<typename feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::group_type_t> &
+feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::all() {
   if (reset_needed) {
     reset();
     reset_needed = false;
@@ -372,10 +375,11 @@ feature_impl<Key, Reduce, Dimension, isGroupAll>::all() {
   return groups;
 }
 
-template <typename K, typename R, typename D,
-          bool b>
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool is_group_all, bool is_iterable>
 inline
-typename feature_impl<K, R, D, b>::reduce_type_t feature_impl<K, R, D, b>::value() {
+typename feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::reduce_type_t
+feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::value() {
   if (reset_needed) {
     reset();
     reset_needed = false;
@@ -386,10 +390,10 @@ typename feature_impl<K, R, D, b>::reduce_type_t feature_impl<K, R, D, b>::value
   return groups[0].second;
 }
 
-// template <typename Key, typename Reduce, typename Dimension,
-//           bool isGroupAll>
+// template <typename Key, typename Reduce, typename Record,
+//           bool is_group_all, bool is_iterable>
 // inline
-// feature_impl<Key, Reduce, Dimension, isGroupAll> &feature_impl<Key, Reduce, Dimension, isGroupAll>::reduce(
+// feature_impl<Key, Reduce, Record, is_group_all> &feature_impl<Key, Reduce, Record, is_group_all>::reduce(
 //     std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> add_,
 //     std::function<reduce_type_t(reduce_type_t &, const record_type_t &, bool)> remove_,
 //     Reduce initial_) {
@@ -400,20 +404,20 @@ typename feature_impl<K, R, D, b>::reduce_type_t feature_impl<K, R, D, b>::value
 //   return *this;
 // }
 
-// template <typename Key, typename Reduce, typename Dimension,
-//           bool isGroupAll>
+// template <typename Key, typename Reduce, typename Record,
+//           bool is_group_all, bool is_iterable>
 // inline
-// feature_impl<Key, Reduce, Dimension, isGroupAll> &feature_impl<Key, Reduce, Dimension, isGroupAll>::reduceCount() {
+// feature_impl<Key, Reduce, Record, is_group_all> &feature_impl<Key, Reduce, Record, is_group_all>::reduceCount() {
 //   return reduce([]( reduce_type_t &v, const record_type_t &, bool) { return v + 1; },
 //                 []( reduce_type_t &v, const record_type_t &, bool) { return v - 1; },
 //                 reduce_type_t());
 // }
 
-// template <typename Key, typename Reduce, typename Dimension,
-//           bool isGroupAll>
+// template <typename Key, typename Reduce, typename Record,
+//           bool is_group_all, bool is_iterable>
 // inline
-// feature_impl<Key, Reduce, Dimension, isGroupAll> &
-// feature_impl<Key, Reduce, Dimension, isGroupAll>::reduce_sum(std::function<reduce_type_t(const record_type_t &)> value) {
+// feature_impl<Key, Reduce, Record, is_group_all> &
+// feature_impl<Key, Reduce, Record, is_group_all>::reduce_sum(std::function<reduce_type_t(const record_type_t &)> value) {
 //   return reduce(
 //       [value](reduce_type_t &v, const record_type_t &t, bool) {
 //         return v + value(t);
@@ -424,12 +428,12 @@ typename feature_impl<K, R, D, b>::reduce_type_t feature_impl<K, R, D, b>::value
 //       Reduce());
 // }
 
-template <typename Key, typename Reduce, typename Dimension,
-          bool isGroupAll>
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool is_group_all, bool is_iterable>
 template<typename OrderFunc>
 inline
-feature_impl<Key, Reduce, Dimension, isGroupAll> &
-feature_impl<Key, Reduce, Dimension, isGroupAll>::order(OrderFunc value) {
+feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable> &
+feature_impl<Key, Reduce, Record, Dimension, is_group_all, is_iterable>::order(OrderFunc value) {
   //  using ph = std::placeholders;
   using T = typename std::decay< decltype(value(std::declval<reduce_type_t>())) >::type;
   select_func = std::bind(Heap<group_type_t, T>::select,

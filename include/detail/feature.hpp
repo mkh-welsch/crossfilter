@@ -12,11 +12,15 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <utility>
 //#include <boost/signals2.hpp>
 #include "detail/feature_impl.hpp"
+#include "detail/filter_base.hpp"
+#include "detail/crossfilter_impl.hpp"
+#include "detail/dimension_impl.hpp"
+
 namespace cross {
-template <typename Key, typename Reduce, typename Dimension,
-          bool isGroupAll = false>
-struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
-  using feature_impl_t = impl::feature_impl<Key, Reduce, Dimension, isGroupAll>;
+template <typename Key, typename Reduce, typename Record, typename Dimension,
+          bool isGroupAll = false, bool is_iterable = false>
+struct feature: private impl::feature_impl<Key, Reduce, Record, Dimension, isGroupAll, is_iterable> {
+  using feature_impl_t = impl::feature_impl<Key, Reduce, Record, Dimension, isGroupAll, is_iterable>;
 
  public:
   using group_type_t = typename feature_impl_t::group_type_t;
@@ -24,26 +28,27 @@ struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
   using record_type_t = typename feature_impl_t::record_type_t;
   using value_type_t = typename feature_impl_t::value_type_t;
 
-  using this_type_t = feature<Key, Reduce, Dimension, isGroupAll>;
+  using this_type_t = feature<Key, Reduce, Record, Dimension, isGroupAll, is_iterable>;
 
  private:
-  friend  typename Dimension::base_type_t;
-  
-  template<typename KeyFunc, typename AddFunc, typename RemoveFunc, typename InitialFunc>
-  feature(typename Dimension::base_type_t *dim, KeyFunc key_,
-        AddFunc add_func_,
-        RemoveFunc remove_func_,
-        InitialFunc initial_func_)
+
+  template <typename T,typename H> friend struct impl::filter_impl;
+  template <typename V,typename T,bool> friend struct impl::dimension_impl;
+  template<typename KeyFunc, typename AddFunc, typename RemoveFunc, typename InitialFunc, typename Base>
+  feature(Base *dim, KeyFunc key_,
+          AddFunc add_func_,
+          RemoveFunc remove_func_,
+          InitialFunc initial_func_)
       : feature_impl_t(dim, key_, add_func_, remove_func_, initial_func_) {}
 
 
  public:
 
-  void dispose() { impl::feature_impl<Key, Reduce, Dimension, isGroupAll>::dispose();}
+  void dispose() { impl::feature_impl<Key, Reduce, Record, Dimension,isGroupAll, is_iterable>::dispose();}
 
-  feature(feature<Key, Reduce, Dimension, isGroupAll> && g):
+  feature(feature<Key, Reduce, Record, Dimension, isGroupAll, is_iterable> && g):
       feature_impl_t(std::move(g)) {}
-      //      feature_impl_t<Key, Reduce, Dimension, isGroupAll>(std::move(g)) {}
+      //      feature_impl_t<Key, Reduce, Record, isGroupAll>(std::move(g)) {}
 
   /**
      Returns a new array containing the top k groups,
