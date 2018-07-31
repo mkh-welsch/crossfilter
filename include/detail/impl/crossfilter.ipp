@@ -19,7 +19,7 @@ filter<T,H>::add(const C &new_data, bool allow_duplicates) {
 template<typename T, typename H>
 inline
 filter<T,H> & filter<T,H>::add(const T &new_data, bool allow_duplicates) {
-  impl_type_t::add(new_data, allow_duplicates);
+  impl_type_t::add(size(),new_data, allow_duplicates);
   return *this;
 }
 
@@ -51,14 +51,14 @@ filter<T,H>::feature(
     AddFunc add_func_,
     RemoveFunc remove_func_,
     InitialFunc initial_func_) -> cross::feature<std::size_t,
-                                        decltype(initial_func_()), T, value_type_t, true, false> {
-  return impl_type_t::feature(add_func_, remove_func_, initial_func_);
+                                        decltype(initial_func_()), this_type_t, true> {
+  return impl_type_t::feature(this, add_func_, remove_func_, initial_func_);
 }
 
 template <typename T, typename H>
 inline
 auto
-filter<T,H>::feature_count() -> cross::feature<std::size_t, std::size_t, T, value_type_t, true, false> {
+filter<T,H>::feature_count() -> cross::feature<std::size_t, std::size_t, this_type_t, true> {
   return feature(
       [](std::size_t & r, const record_type_t &, bool ) {
         return r + 1;
@@ -77,7 +77,7 @@ template<typename T, typename H>
 template<typename G>
 inline
 auto filter<T,H>::feature_sum(G value)
-    -> cross::feature<std::size_t, decltype(value(record_type_t())), T, value_type_t, true, false> {
+    -> cross::feature<std::size_t, decltype(value(record_type_t())), this_type_t, true> {
   using R = decltype(value(record_type_t()));
 
   return feature(

@@ -83,3 +83,4 @@ BOOST_AUTO_TEST_CASE(add_batch_of_data) {
     f.data.add(in2,false);
     BOOST_TEST( 4== f.data.size());
 }
+

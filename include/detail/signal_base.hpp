@@ -29,10 +29,10 @@ struct MovableSignal {
   MovableSignal()
       :signal(std::make_unique<Signal>()) {}
 
-  MovableSignal(MovableSignal && s)
+  MovableSignal(MovableSignal && s) noexcept
       :signal(std::move(s.signal)) {}
 
-  MovableSignal & operator = (MovableSignal && s) {
+  MovableSignal & operator = (MovableSignal && s) noexcept {
     if(&s == this)
       return *this;
     std::swap(signal,s.signal);

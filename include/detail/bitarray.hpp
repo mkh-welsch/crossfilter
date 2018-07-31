@@ -50,6 +50,24 @@ class BitArray {
     }
     indexSize = newSize;
   }
+  void insert(std::size_t index, std::size_t insert_size, std::size_t new_size) {
+    for (auto & v : bits) {
+      if(v.empty()) {
+        v.resize(new_size);
+      } else  if (v.size() != new_size) {
+
+        ///        auto old_size = v.size();
+        // v.resize(new_size);
+        auto p = v.begin() + index;
+        p = v.insert(p,insert_size,0);
+        //        std::copy(p + insert_size, indexSize )
+        // auto pend = p + insert_size;
+        // std::copy(p,pend,pend);
+        // std::fill(p,pend,0);
+      }
+    }
+    indexSize = new_size;
+  }
 
   // return index in bits array and number of bit for coresponding mask
   std::tuple<std::size_t, int> add_row() {
@@ -167,17 +185,11 @@ class BitArray {
   //     bits[offset][index] &= ~(1 << bitIndex);
   // }
   void set(std::size_t index, std::size_t offset, int bitIndex) {
-    // auto b = std::bitset<8>(bits[offset][index]);
-    // b.set(bitIndex, newValue);
-    // bits[offset][index] = b.to_ulong();
     bits[offset][index] |= 1 << bitIndex;
   }
 
   void reset(std::size_t index, std::size_t offset, int bitIndex) {
     bits[offset][index] &= ~(1 << bitIndex);
-    // auto b = std::bitset<8>(bits[offset][index]);
-    // b.reset(bitIndex);
-    // bits[offset][index] = b.to_ulong();
   }
 };
 

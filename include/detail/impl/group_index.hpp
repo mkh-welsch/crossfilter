@@ -16,15 +16,15 @@ struct GroupIndex {
 
   std::vector<index_type_t> data;
 
-  GroupIndex() {}
+  GroupIndex() = default;
 
   explicit GroupIndex(std::size_t n)
       :data(n) {}
 
-  GroupIndex(GroupIndex && gi)
+  GroupIndex(GroupIndex && gi) noexcept
       :data(std::move(gi.data)) {}
 
-  GroupIndex & operator = (GroupIndex && gi) {
+  GroupIndex & operator = (GroupIndex && gi) noexcept {
     data = std::move(gi.data);
     return *this;
   }
@@ -33,7 +33,8 @@ struct GroupIndex {
   }
   template<bool B = true>
   typename std::enable_if<B && Flat,std::size_t>::type
-  size(std::size_t) {
+  size(std::size_t i) {
+    (void)i;
     return 1;
   }
   template<bool B = true>
@@ -41,7 +42,9 @@ struct GroupIndex {
   size(std::size_t i) {
     return data[i].size();
   }
-
+  void clear() {
+    data.clear();
+  }
   void resize(std::size_t newSize) {
     data.resize(newSize);
   }

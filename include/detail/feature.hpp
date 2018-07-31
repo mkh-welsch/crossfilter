@@ -12,15 +12,14 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <utility>
 //#include <boost/signals2.hpp>
 #include "detail/feature_impl.hpp"
-#include "detail/filter_base.hpp"
 #include "detail/crossfilter_impl.hpp"
 #include "detail/dimension_impl.hpp"
 
 namespace cross {
-template <typename Key, typename Reduce, typename Record, typename Dimension,
-          bool isGroupAll = false, bool is_iterable = false>
-struct feature: private impl::feature_impl<Key, Reduce, Record, Dimension, isGroupAll, is_iterable> {
-  using feature_impl_t = impl::feature_impl<Key, Reduce, Record, Dimension, isGroupAll, is_iterable>;
+template <typename Key, typename Reduce, typename Dimension,
+          bool isGroupAll = false>
+struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
+  using feature_impl_t = impl::feature_impl<Key, Reduce,Dimension, isGroupAll>;
 
  public:
   using group_type_t = typename feature_impl_t::group_type_t;
@@ -28,12 +27,12 @@ struct feature: private impl::feature_impl<Key, Reduce, Record, Dimension, isGro
   using record_type_t = typename feature_impl_t::record_type_t;
   using value_type_t = typename feature_impl_t::value_type_t;
 
-  using this_type_t = feature<Key, Reduce, Record, Dimension, isGroupAll, is_iterable>;
+  using this_type_t = feature<Key, Reduce, Dimension, isGroupAll>;
 
  private:
 
   template <typename T,typename H> friend struct impl::filter_impl;
-  template <typename V,typename T,bool> friend struct impl::dimension_impl;
+  template <typename ,typename , typename , typename> friend struct impl::dimension_impl;
   template<typename KeyFunc, typename AddFunc, typename RemoveFunc, typename InitialFunc, typename Base>
   feature(Base *dim, KeyFunc key_,
           AddFunc add_func_,
@@ -44,9 +43,9 @@ struct feature: private impl::feature_impl<Key, Reduce, Record, Dimension, isGro
 
  public:
 
-  void dispose() { impl::feature_impl<Key, Reduce, Record, Dimension,isGroupAll, is_iterable>::dispose();}
+  void dispose() { feature_impl_t::dispose();}
 
-  feature(feature<Key, Reduce, Record, Dimension, isGroupAll, is_iterable> && g):
+  feature(feature<Key, Reduce, Dimension, isGroupAll> && g):
       feature_impl_t(std::move(g)) {}
       //      feature_impl_t<Key, Reduce, Record, isGroupAll>(std::move(g)) {}
 
@@ -54,7 +53,7 @@ struct feature: private impl::feature_impl<Key, Reduce, Record, Dimension, isGro
      Returns a new array containing the top k groups,
      according to the group order of the associated reduce value. The returned array is in descending order by reduce value.
    */
-  std::vector<group_type_t> top(std::size_t k) {
+  std::vector<group_type_t> top(std::size_t k) noexcept {
     return feature_impl_t::top(k);
   }
 
@@ -63,21 +62,21 @@ struct feature: private impl::feature_impl<Key, Reduce, Record, Dimension, isGro
      according to the order defined by orderFunc of the associated reduce value.
    */
   template<typename OrderFunc>
-  std::vector<group_type_t> top(std::size_t k, OrderFunc orderFunc) {
+  std::vector<group_type_t> top(std::size_t k, OrderFunc orderFunc) noexcept {
     return feature_impl_t::top(k, orderFunc);
   }
 
   /**
      Returns the array of all groups, in ascending natural order by key. 
    */
-  std::vector<group_type_t> &all() {
+  std::vector<group_type_t> &all() noexcept{
     return feature_impl_t::all();
   }
 
   /**
      Equivalent to all()[0].second.
    */
-  reduce_type_t value() {
+  reduce_type_t value() noexcept {
     return feature_impl_t::value();
   }
 
@@ -87,7 +86,7 @@ struct feature: private impl::feature_impl<Key, Reduce, Record, Dimension, isGro
      which assumes that the reduction values are naturally-ordered (such as simple counts or sums).
    */
   template<typename OrderFunc>
-  this_type_t &   order(OrderFunc value) {
+  this_type_t &   order(OrderFunc value) noexcept {
     feature_impl_t::order(value);
     return *this;
   }
@@ -95,19 +94,16 @@ struct feature: private impl::feature_impl<Key, Reduce, Record, Dimension, isGro
   /**
      A convenience method for using natural order for reduce values. Returns this grouping.
    */
-  this_type_t & order_natural() {
+  this_type_t & order_natural() noexcept{
     feature_impl_t::order_natural();
     return *this;
   }
   /**
      Returns the number of distinct values in the group, independent of any filters; the cardinality.
    */
-  std::size_t size() const { return feature_impl_t::size(); }
+  std::size_t size() const noexcept { return feature_impl_t::size(); }
 
-  // std::vector<group_type_t> & all2() {
-  //   return feature_impl_t::all();
-  // }
-  
+ 
 };
 } //namespace cross
 #endif

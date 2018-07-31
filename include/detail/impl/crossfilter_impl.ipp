@@ -53,7 +53,7 @@ filter_impl<T,H>:: on_change(std::function<void(const std::string &)> callback) 
 template<typename T, typename H>
 inline
 typename filter_impl<T,H>::connection_type_t
-filter_impl<T,H>::connect_add_slot(std::function<void(data_iterator, data_iterator)> slot) {
+filter_impl<T,H>::connect_add_slot(std::function<void(std::size_t,data_iterator, data_iterator)> slot) {
   return add_signal.connect(slot);
 }
 template<typename T, typename H>
@@ -61,6 +61,13 @@ inline
 typename filter_impl<T,H>::connection_type_t
 filter_impl<T,H>::connect_post_add_slot(std::function<void(std::size_t)> slot) {
   return post_add_signal.connect(slot);
+}
+
+template<typename T, typename H>
+inline
+typename filter_impl<T,H>::connection_type_t
+filter_impl<T,H>::connect_clear_slot(std::function<void()> slot) {
+  return clear_signal.connect(slot);
 }
 
 template<typename T, typename H>
@@ -136,20 +143,20 @@ template<typename T, typename H>
 template<typename G>
 inline
 auto filter_impl<T,H>::dimension(G getter)
-    -> cross::dimension<decltype(getter(std::declval<T>())), T, false> {
+    -> cross::dimension<decltype(getter(std::declval<T>())), T, cross::non_iterable,H> {
   auto dimension_filter = filters.add_row();
-  cross::dimension<decltype(getter(std::declval<record_type_t>())), T, false> dim(this, dimension_filter, getter);
-  dim.add(data.begin(), data.end());
+  cross::dimension<decltype(getter(std::declval<record_type_t>())), T, cross::non_iterable, H> dim(this, std::get<0>(dimension_filter), std::get<1>(dimension_filter), getter);
+  dim.add(0,data.begin(), data.end());
   return dim;
 }
 
 template<typename T, typename H>
 template<typename V, typename G>
 inline
-auto filter_impl<T,H>::iterable_dimension(G getter) -> cross::dimension<V, T, true> {
+auto filter_impl<T,H>::iterable_dimension(G getter) -> cross::dimension<V, T, cross::iterable, H> {
   auto dimension_filter = filters.add_row();
-  cross::dimension<V, T, true> dim(this, dimension_filter, getter);
-  dim.add(data.begin(), data.end());
+  cross::dimension<V, T, cross::iterable, H> dim(this, std::get<0>(dimension_filter), std::get<1>(dimension_filter), getter);
+  dim.add(0, data.begin(), data.end());
   return dim;
 }
 
@@ -208,99 +215,341 @@ bool filter_impl<T,H>::is_element_filtered(std::size_t index, Ts&... dimensions)
 }
 
 template<typename T, typename H>
+template<typename... _Args>
+inline
+std::size_t filter_impl<T,H>::emplace (std::size_t position, _Args &&... args) {
+  auto old_data_size = data.size();
+
+  auto new_data_size = 1;
+
+  auto lp = data.begin() + position;
+  data.emplace(lp,args...);
+  auto & b = data.back();
+  auto h = hash(b);
+  auto p = hash_table.find(h);
+    if(p == hash_table.end())
+        hash_table[h] = 1;
+    else
+        p->second++;
+
+  data_size += new_data_size;
+  //  filters.resize(data_size);
+  filters.insert(position,new_data_size,data_size);
+  data_iterator nbegin = data.begin() + position;
+
+  data_iterator nend = nbegin;
+  std::advance(nend, new_data_size);
+
+  add_signal(position, nbegin, nend);
+  post_add_signal(new_data_size);
+
+  if(add_group_signal.num_slots() != 0) {
+    // FIXME: remove temporary vector
+    std::vector<T> tmp;
+    tmp.push_back(b);
+
+    std::vector<std::size_t> indexes(tmp.size());
+    std::iota(indexes.begin(),indexes.end(),old_data_size);
+    add_group_signal(tmp, indexes, old_data_size, new_data_size);
+  }
+  trigger_on_change("dataAdded");
+  return position;
+}
+template<typename T, typename H>
+template<typename Iterator>
+inline
+filter_impl<T,H> & filter_impl<T,H>::add(std::size_t index, Iterator first, Iterator last,  bool allow_duplicates) {
+  auto old_data_size = data.size();
+  // // auto begin = std::begin(new_data);
+  // // auto end = std::end(new_data);
+
+  // auto new_data_size = std::distance(first, last);
+  // auto insert_index = data.begin();
+  // std::advance(insert_index,index);
+
+  // if (new_data_size > 0) {
+  //   if(allow_duplicates) {
+
+  //     std::transform(first, last, std::inserter(data,insert_index),[this](auto v) {
+  //         auto h = hash(v);
+  //         auto p = hash_table.find(h);
+  //         if(p == hash_table.end())
+  //             hash_table[h] = 1;
+  //         else
+  //             p->second++;
+  //       return v;
+  //     }
+  //       );
+  //     //      data.insert(data.end(), begin, end);
+  //     data_size += new_data_size;
+  //   } else {
+  //     std::size_t count = 0;
+  //     for(auto p = first; p != last; ++p) {
+  //       auto h = hash(*p);
+
+  //       if(hash_table.find(h) == hash_table.end()) {
+  //         //data.push_back(*p);
+  //         data.insert(insert_index++,*p);
+  //         hash_table[h] = 1;
+  //         count++;
+  //       }
+  //     }
+  //     data_size += count;
+  //     new_data_size = count;
+  //   }
+  // }
+  auto new_data_size = do_add_range(index, first, last, allow_duplicates);
+  if(new_data_size == 0)
+    return *this;
+  //    filters.resize(data_size);
+  filters.insert(index,new_data_size,data_size);
+  data_iterator nbegin = data.begin() + index;
+  //std::advance(nbegin, index);
+  data_iterator nend = nbegin;
+  std::advance(nend, new_data_size);
+
+  add_signal(index, nbegin, nend);
+  post_add_signal(new_data_size);
+
+  if(add_group_signal.num_slots() != 0) {
+    // FIXME: remove temporary vector
+    std::vector<record_type_t> tmp(first, last);
+    std::vector<std::size_t> indexes(tmp.size());
+    std::iota(indexes.begin(),indexes.end(),old_data_size);
+    add_group_signal(tmp, indexes, old_data_size, new_data_size);
+  }
+  trigger_on_change("dataAdded");
+  return *this;
+}
+
+template<typename T, typename H>
 template<typename C>
 inline
-filter_impl<T,H> & filter_impl<T,H>::add(const C &new_data,  bool allow_duplicates) {
-  auto old_data_size = data.size();
-  auto begin = std::begin(new_data);
-  auto end = std::end(new_data);
+typename std::enable_if<!std::is_same<C, T>::value, filter_impl<T,H>&>::type
+filter_impl<T,H>::add(const C &new_data,  bool allow_duplicates) {
+  return add(data.size(),std::begin(new_data),std::end(new_data), allow_duplicates);
+}
+// template<typename T, typename H>
+// template<typename Iterator>
+// inline
+// filter_impl<T,H> & filter_impl<T,H>::add(Iterator begin, Iterator end,  bool allow_duplicates) {
+//   auto old_data_size = data.size();
+//   // auto begin = std::begin(new_data);
+//   // auto end = std::end(new_data);
 
-  auto new_data_size = std::distance(begin, end);
+//   auto new_data_size = std::distance(begin, end);
+
+//   if (new_data_size > 0) {
+//     if(allow_duplicates) {
+//       std::transform(begin, end, std::back_inserter(data),[this](auto v) {
+//           auto h = hash(v);
+//           auto p = hash_table.find(h);
+//           if(p == hash_table.end())
+//               hash_table[h] = 1;
+//           else
+//               p->second++;
+//         return v;
+//       }
+//         );
+//       //      data.insert(data.end(), begin, end);
+//       data_size += new_data_size;
+//     } else {
+//       std::size_t count = 0;
+//       for(auto p = begin; p != end; ++p) {
+//         auto h = hash(*p);
+
+//         if(hash_table.find(h) == hash_table.end()) {
+//           data.push_back(*p);
+//           hash_table[h] = 1;
+//           count++;
+//         }
+//       }
+//       data_size += count;
+//       new_data_size = count;
+//     }
+//     filters.resize(data_size);
+//     data_iterator nbegin = data.begin();
+//     std::advance(nbegin, old_data_size);
+
+//     data_iterator nend = nbegin;
+//     std::advance(nend, new_data_size);
+
+//     add_signal(old_data_size, nbegin, nend);
+//     post_add_signal(new_data_size);
+
+//     if(add_group_signal.num_slots() != 0) {
+//       // FIXME: remove temporary vector
+//       std::vector<record_type_t> tmp(begin, end);
+//       std::vector<std::size_t> indexes(tmp.size());
+//       std::iota(indexes.begin(),indexes.end(),old_data_size);
+//       add_group_signal(tmp, indexes, old_data_size, new_data_size);
+//     }
+
+//     trigger_on_change("dataAdded");
+//   }
+//   return *this;
+// }
+
+
+template<typename T, typename H>
+template<bool B>
+inline
+typename std::enable_if<!std::is_same<H,cross::trivial_hash<T>>::value && B, std::size_t>::type
+filter_impl<T,H>::do_add_one(std::size_t pos, const T &new_data,bool allow_duplicates) {
+  //auto old_data_size = data.size();
+  //auto new_data_size = 1;
+  auto h = hash(new_data);
+  auto lp = data.begin() + pos;
+  if(allow_duplicates) {
+
+    //data.push_back(new_data);
+    data.insert(lp,new_data);
+    auto p = hash_table.find(h);
+    if(p == hash_table.end()) {
+      hash_table[h] = 1;
+    }
+    else {
+      p->second++;
+    }
+  } else {
+    if(hash_table.find(h) == hash_table.end()) {
+      data.insert(lp,new_data);
+      //data.push_back(new_data);
+      hash_table[h] = 1;
+    } else {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+template<typename T, typename H>
+template<bool B>
+inline
+typename std::enable_if<std::is_same<H,cross::trivial_hash<T>>::value && B, std::size_t>::type
+filter_impl<T,H>::do_add_one(std::size_t pos, const T &new_data,bool) {
+  //  auto old_data_size = data.size();
+  //  auto new_data_size = 1;
+  if(pos == data.size()) {
+    data.push_back(new_data);
+  } else {
+    auto lp = data.begin() + pos;
+    data.insert(lp,new_data);
+  }
+  return 1;
+}
+
+template<typename T, typename H>
+template<typename Iterator, bool B>
+inline
+typename std::enable_if<!std::is_same<H,cross::trivial_hash<T>>::value && B, std::size_t>::type
+filter_impl<T,H>::do_add_range(std::size_t index, Iterator first, Iterator last,  bool allow_duplicates) {
+  //auto old_data_size = data.size();
+
+  auto new_data_size = std::distance(first, last);
+  auto insert_index = data.begin();
+  std::advance(insert_index,index);
 
   if (new_data_size > 0) {
     if(allow_duplicates) {
-      std::transform(begin, end, std::back_inserter(data),[this](auto v) {
-          auto h = hash(v);
-          auto p = hash_table.find(h);
-          if(p == hash_table.end())
-              hash_table[h] = 1;
-          else
-              p->second++;
-        return v;
-      }
+
+      std::transform(first, last, std::inserter(data,insert_index),
+                     [this](auto v) {
+                       auto h = hash(v);
+                       auto p = hash_table.find(h);
+                       if(p == hash_table.end())
+                         hash_table[h] = 1;
+                       else
+                         p->second++;
+                       return v;
+                     }
         );
-      //      data.insert(data.end(), begin, end);
       data_size += new_data_size;
+      return new_data_size;;
     } else {
       std::size_t count = 0;
-      for(auto p = begin; p != end; ++p) {
+      for(auto p = first; p != last; ++p) {
         auto h = hash(*p);
         if(hash_table.find(h) == hash_table.end()) {
-          data.push_back(*p);
+          data.insert(insert_index++,*p);
           hash_table[h] = 1;
           count++;
         }
       }
       data_size += count;
       new_data_size = count;
+      return count;
     }
-    filters.resize(data_size);
-    data_iterator nbegin = data.begin();
-    std::advance(nbegin, old_data_size);
-
-    data_iterator nend = nbegin;
-    std::advance(nend, new_data_size);
-
-    add_signal(nbegin, nend);
-    post_add_signal(new_data_size);
-
-    if(add_group_signal.num_slots() != 0) {
-      // FIXME: remove temporary vector
-      std::vector<record_type_t> tmp(begin, end);
-      std::vector<std::size_t> indexes(tmp.size());
-      std::iota(indexes.begin(),indexes.end(),old_data_size);
-      add_group_signal(tmp, indexes, old_data_size, new_data_size);
-    }
-
-    trigger_on_change("dataAdded");
   }
-  return *this;
+  return 0;
+}
+template<typename T, typename H>
+template<typename Iterator, bool B>
+inline
+typename std::enable_if<std::is_same<H,cross::trivial_hash<T>>::value && B, std::size_t>::type
+filter_impl<T,H>::do_add_range(std::size_t index, Iterator first, Iterator last,  bool) {
+  //  auto old_data_size = data.size();
+
+  auto new_data_size = std::distance(first, last);
+  auto insert_index = data.begin();
+  std::advance(insert_index,index);
+
+  if (new_data_size > 0) {
+    data.insert(insert_index,first,last);
+    data_size += new_data_size;
+    return new_data_size;;
+  }
+  return 0;
 }
 
 template<typename T, typename H>
 inline
-filter_impl<T,H> & filter_impl<T,H>::add(const T &new_data,bool allow_duplicates) {
+filter_impl<T,H> & filter_impl<T,H>::add(std::size_t pos, const T &new_data,bool allow_duplicates) {
   auto old_data_size = data.size();
 
-  auto new_data_size = 1;
-  auto h = hash(new_data);
-  if(allow_duplicates) {
-    data.push_back(new_data);
-    auto p = hash_table.find(h);
-    if(p == hash_table.end())
-        hash_table[h] = 1;
-    else
-        p->second++;
-  } else {
-    if(hash_table.find(h) == hash_table.end()) {
-      data.push_back(new_data);
-      hash_table[h] = 1;
-    } else {
-      return *this;
-    }
-  }
+  // auto new_data_size = 1;
+  // auto h = hash(new_data);
+  // auto lp = data.begin() + pos;
+  // if(allow_duplicates) {
+
+  //   //data.push_back(new_data);
+  //   data.insert(lp,new_data);
+  //   auto p = hash_table.find(h);
+  //   if(p == hash_table.end())
+  //       hash_table[h] = 1;
+  //   else
+  //       p->second++;
+  // } else {
+  //   if(hash_table.find(h) == hash_table.end()) {
+  //     data.insert(lp,new_data);
+  //     //data.push_back(new_data);
+  //     hash_table[h] = 1;
+  //   } else {
+  //     return *this;
+  //   }
+  // }
+  auto new_data_size = do_add_one(pos,new_data,allow_duplicates);
+  if(new_data_size == 0)
+    return *this;
 
   data_size += new_data_size;
-  filters.resize(data_size);
+  filters.insert(pos,new_data_size,data_size);
 
-  // FIXME: remove temporary vector
-  std::vector<T> tmp;
-  tmp.push_back(new_data);
+  data_iterator nbegin = data.begin() + pos;
+  //  std::advance(nbegin, old_data_size);
 
-  add_signal(tmp.begin(), tmp.end());
+  data_iterator nend = nbegin;
+  std::advance(nend, new_data_size);
+
+  //  add_signal(tmp.begin(), tmp.end());
+  add_signal(pos, nbegin, nend);
   post_add_signal(new_data_size);
 
   if(add_group_signal.num_slots() != 0) {
+    // FIXME: remove temporary vector
+    std::vector<T> tmp;
+    tmp.push_back(new_data);
+
     std::vector<std::size_t> indexes(tmp.size());
     std::iota(indexes.begin(),indexes.end(),old_data_size);
     add_group_signal(tmp, indexes, old_data_size, new_data_size);
@@ -352,26 +601,69 @@ filter_impl<T,H>::get_data_iterators_for_indexes(std::size_t low, std::size_t hi
                                                          std::move(end));
   }
 
+// template<typename T, typename H>
+// inline
+// void filter_impl<T,H>::remove_data(std::size_t first, std::size_t last) {
+//   std::vector<std::size_t> removed;
+//   std::vector<int64_t> new_index(data_size);
+//   removed.reserve(last-first);
+//   for(std::size_t i = first; i < last; i++) {
+//     removed.push_back(i);
+//     auto h = hash(data[index1]);
+//     auto p = hash_table.find(h);
+//     if(--(p->second) == 0) {
+//       hash_table.erase(p);
+//     }
+//   }
+//   // Remove all matching records from groups.
+//   filter_signal(std::numeric_limits<std::size_t>::max(), -1,
+//                 std::vector<std::size_t>(), removed, true);
+//   // Update indexes.
+//   remove_signal(new_index);
+
+// }
+template<typename T, typename H>
+template <bool B>
+inline
+typename std::enable_if<!std::is_same<H,cross::trivial_hash<T>>::value && B, void>::type
+filter_impl<T,H>::update_hash_on_remove(std::size_t index) {
+  auto h = hash(data[index]);
+  auto p = hash_table.find(h);
+  if(--(p->second) == 0) {
+    hash_table.erase(p);
+  }
+}
+
+template<typename T, typename H>
+template <bool B>
+inline
+typename std::enable_if<std::is_same<H,cross::trivial_hash<T>>::value && B, void>::type
+filter_impl<T,H>::update_hash_on_remove(std::size_t) { }
+
 template<typename T, typename H>
 inline
-void filter_impl<T,H>::remove_data(std::function<bool(int)> should_remove) {
+void filter_impl<T,H>::remove_data(std::function<bool(int)> should_remove, std::size_t first, std::size_t last) {
     std::vector<int64_t> new_index(data_size);
 
     std::vector<std::size_t> removed;
-
-    for (std::size_t index1 = 0, index2 = 0; index1 < data_size; ++index1) {
+    //    for (std::size_t index1 = 0, index2 = 0; index1 < data_size; ++index1) {
+    auto p = new_index.begin();
+    auto p1 = p;
+    std::advance(p1,first);
+    std::iota(p,p1,std::int64_t(0));
+    std::size_t index2 = first;
+    for (std::size_t index1 = first; index1 < last; ++index1) {
       if (should_remove(index1)) {
         removed.push_back(index1);
         new_index[index1] = REMOVED_INDEX;
-        auto h = hash(data[index1]);
-        auto p = hash_table.find(h);
-        if(--(p->second) == 0) {
-            hash_table.erase(p);
-        }
+        update_hash_on_remove(index1);
       } else {
         new_index[index1] = index2++;
       }
     }
+    std::advance(p,last);
+    p1 = new_index.end();
+    std::iota(p,p1,std::int64_t(index2));
 
     // Remove all matching records from groups.
     filter_signal(std::numeric_limits<std::size_t>::max(), -1,
@@ -380,9 +672,10 @@ void filter_impl<T,H>::remove_data(std::function<bool(int)> should_remove) {
     remove_signal(new_index);
 
     // Remove old filters and data by overwriting.
-    std::size_t index4 = 0;
+    std::size_t index4 = first;
 
-    for (std::size_t index3 = 0; index3 < data_size; ++index3) {
+    //    for (std::size_t index3 = 0; index3 < data_size; ++index3) {
+    for (std::size_t index3 = first; index3 < data_size; ++index3) {
       if (new_index[index3] != REMOVED_INDEX) {
         if (index3 != index4) {
           filters.copy(index4, index3);
@@ -392,9 +685,9 @@ void filter_impl<T,H>::remove_data(std::function<bool(int)> should_remove) {
       }
     }
 
-    data_size = index4;
+    data_size -= removed.size();
     data.resize(data_size);
-    filters.truncate(index4);
+    filters.truncate(data_size);
     trigger_on_change("dataRemoved");
   }
 
@@ -403,31 +696,44 @@ void filter_impl<T,H>::remove_data(std::function<bool(int)> should_remove) {
 template<typename T, typename H>
 inline
 void filter_impl<T,H>::remove(std::function<bool(const T&, int)> predicate) {
-  remove_data([&](auto i) { return predicate(data[i], i); });
+  remove_data([&](auto i) { return predicate(data[i], i); }, 0, data_size);
 }
 
 template<typename T, typename H>
 inline
   // Removes all records that match the current filters
 void filter_impl<T,H>::remove() {
-  remove_data([&](auto i) { return filters.zero(i); });
+  remove_data([&](auto i) { return filters.zero(i); }, 0, data_size );
 }
 
+template<typename T, typename H>
+inline
+void filter_impl<T,H>::remove(std::size_t first, std::size_t last) {
+  remove_data([](auto) { return true;}, first, last);
+}
+template<typename T, typename H>
+inline
+void filter_impl<T,H>::clear() {
+  data.clear();
+  hash_table.clear();
+  clear_signal();
+}
 template<typename T, typename H>
 template <typename AddFunc, typename RemoveFunc, typename InitialFunc>
 inline
 auto  filter_impl<T,H>::feature(
+    cross::filter<T,H> * base,
     AddFunc  add_func_,
     RemoveFunc remove_func_,
     InitialFunc initial_func_) -> cross::feature<std::size_t,
-                                                 decltype(initial_func_()), T, value_type_t, true, false> {
+                                                 decltype(initial_func_()),  this_type_t, true> {
   using reduce_type_t = decltype(initial_func_());
 
-  cross::feature<std::size_t, reduce_type_t, T, value_type_t, true, false> g(this,
-                                                                      [](const value_type_t& ) { return std::size_t(0);},
-                                                                      add_func_,
-                                                                      remove_func_,
-                                                                      initial_func_);
+  cross::feature<std::size_t, reduce_type_t, this_type_t, true> g(base,
+                                                                  [](const value_type_t& ) { return std::size_t(0);},
+                                                                  add_func_,
+                                                                  remove_func_,
+                                                                  initial_func_);
   std::vector<std::size_t> indexes(data.size());
   std::iota(indexes.begin(),indexes.end(),0);
   g.add(data, indexes, 0,data.size());
