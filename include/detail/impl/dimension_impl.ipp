@@ -1,8 +1,8 @@
 /*This Source Code Form is subject to the terms of the Mozilla Public
-License, v. 2.0. If a copy of the MPL was not distributed with this
-file, You can obtain one at http://mozilla.org/MPL/2.0/.
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-Copyright (c) 2018 Dmitry Vinokurov */
+  Copyright (c) 2018 Dmitry Vinokurov */
 
 #include <numeric>
 #include <unordered_map>
@@ -12,24 +12,26 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #endif
 namespace cross {
 namespace impl {
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-dimension_impl<V, T, isIterable>::dimension_impl(filter_impl<T> *cf, std::tuple<std::size_t, int> filter_pos_,
-                                   std::function<field_type_t(const record_type_t &)> getter_)
-    : crossfilter(cf), dimension_offset(std::get<0>(filter_pos_)),
-      dimension_bit_index(std::get<1>(filter_pos_)), getter(getter_) {
+dimension_impl<V, T, I, H>::dimension_impl(cross::impl::filter_impl<T,H> *cf, std::size_t offset, int bit_num,
+                                           std::function<field_type_t(const record_type_t &)> getter_)
+    : crossfilter(cf),
+    getter(getter_) {
 
-  slot_add =  [this](data_iterator begin, data_iterator end) {
-    this->add(begin, end);
-  };
+  dimension_offset = offset;
+  dimension_bit_index = bit_num;
+  slot_add =  [this](std::size_t index, data_iterator begin, data_iterator end) {
+                this->add(index,begin, end);
+              };
 
   slot_remove = [this] (const std::vector<int64_t> &re_index) {
-    this->remove_data(re_index);
-  };
+                  this->remove_data(re_index);
+                };
   slot_post_add = [this](std::size_t new_data_size) {
-    add_signal(new_values, new_indexes, old_data_size, new_data_size);
-    new_values.clear();
-  };
+                    add_signal(new_values, new_indexes, old_data_size, new_data_size);
+                    new_values.clear();
+                  };
 
 
   connection_add = crossfilter->connect_add_slot(slot_add);
@@ -37,93 +39,92 @@ dimension_impl<V, T, isIterable>::dimension_impl(filter_impl<T> *cf, std::tuple<
   connection_post_add = crossfilter->connect_post_add_slot(slot_post_add);
 
   refilter = [](const std::vector<value_type_t> &val) {
-    return std::make_tuple<std::size_t, std::size_t>(0, val.size());
-  };
-  add(crossfilter->data.begin(), crossfilter->data.end());
+               return std::make_tuple<std::size_t, std::size_t>(0, val.size());
+             };
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-void  dimension_impl<V, T, isIterable>::dispose() {
+void  dimension_impl<V, T, I, H>::clear() {
+  iterables_index_count.clear();
+  iterables_empty_rows.clear();
+  low = high = 0;
+  old_data_size = 0;
+  values.clear();
+  indexes.clear();
+  new_values.clear();
+  new_indexes.clear();
+  added.clear();
+  removed.clear();
+  refilter_function_flag = false;
+}
+
+template<typename V, typename T, typename I, typename H>
+inline
+void  dimension_impl<V, T, I, H>::dispose() {
   dispose_dimension_signal();
   connection_add.disconnect();
   connection_remove.disconnect();
   filter_all();
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-bool dimension_impl<V, T, isIterable>::zero_except(std::size_t index) {
-  return crossfilter->filters.zero_except(index,
-                                         dimension_offset,
-                                         dimension_bit_index);
+bool dimension_impl<V, T, I, H>::zero_except(std::size_t index) {
+  return crossfilter->zero_except(index,
+                                  this->dimension_offset,
+                                  this->dimension_bit_index);
 }
 
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-bool  dimension_impl<V, T, isIterable>::only_except(std::size_t index, std::size_t offset, int bit_index) {
+bool  dimension_impl<V, T, I, H>::only_except(std::size_t index, std::size_t offset, int bit_index) {
 
-  return crossfilter->filters.only_except(index,
-                                         dimension_offset, dimension_bit_index, offset, bit_index);
+  return crossfilter->only_except(index,
+                                  this->dimension_offset, this->dimension_bit_index, offset, bit_index);
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-auto
-dimension_impl<V, T, isIterable>::get(std::size_t index)
-    -> record_type_t& {
-  return crossfilter->data[indexes[index]];
-}
-
-template<typename V, typename T, bool isIterable>
-inline
-// typename dimension_impl<V, T, isIterable>::record_type_t &
-auto
-dimension_impl<V, T, isIterable>::get_raw(std::size_t index) -> record_type_t& {
-  return crossfilter->data[index];
-}
-
-template<typename V, typename T, bool isIterable>
-inline
-typename dimension_impl<V,T,isIterable>::connection_type_t
-dimension_impl<V, T, isIterable>::connect_filter_slot(std::function<void(std::size_t, int,
-                                                                               const std::vector<std::size_t> &,
-                                                                               const std::vector<std::size_t> &,
-                                                                               bool)> slot) {
+typename dimension_impl<V, T, I, H>::connection_type_t
+dimension_impl<V, T, I, H>::connect_filter_slot(std::function<void(std::size_t, int,
+                                                                   const std::vector<std::size_t> &,
+                                                                   const std::vector<std::size_t> &,
+                                                                   bool)> slot) {
   return crossfilter->connect_filter_slot(slot);
 }
 
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-typename dimension_impl<V,T,isIterable>::connection_type_t
-dimension_impl<V, T, isIterable>::connect_add_slot(std::function<void(const std::vector<value_type_t>&,
-                                                                            const std::vector<std::size_t> &,
-                                                                            std::size_t, std::size_t)> slot) {
+typename dimension_impl<V, T, I, H>::connection_type_t
+dimension_impl<V, T, I, H>::connect_add_slot(std::function<void(const std::vector<value_type_t>&,
+                                                                const std::vector<std::size_t> &,
+                                                                std::size_t, std::size_t)> slot) {
   return add_signal.connect(slot);
 }
 
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-typename dimension_impl<V,T,isIterable>::connection_type_t
-dimension_impl<V, T, isIterable>::connect_remove_slot(std::function<void(const std::vector<int64_t> &)> slot) {
+typename dimension_impl<V, T, I, H>::connection_type_t
+dimension_impl<V, T, I, H>::connect_remove_slot(std::function<void(const std::vector<int64_t> &)> slot) {
   return remove_signal.connect(slot);
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-typename dimension_impl<V,T,isIterable>::connection_type_t
-dimension_impl<V, T, isIterable>::connect_dispose_slot(std::function<void()> slot) {
+typename dimension_impl<V, T, I, H>::connection_type_t
+dimension_impl<V, T, I, H>::connect_dispose_slot(std::function<void()> slot) {
   return dispose_dimension_signal.connect(slot);
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 template<bool Enable>
 inline
-std::enable_if_t<isIterable && Enable>
-dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
+std::enable_if_t<dimension_impl<V,T,I,H>::isIterable && Enable>
+dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, data_iterator end) {
 
   new_values.clear();
   new_indexes.clear();
@@ -133,13 +134,15 @@ dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
   std::vector<std::size_t> unsorted_index;
   std::size_t l = 0;
   std::vector<std::size_t> new_iterables_index_count(new_data_size);
-
+  auto empty_rows = 0;
   for (std::size_t index1 = 0; index1 < new_data_size; index1++) {
     auto k = getter(*(begin + index1));
 
     if (k.empty()) {
       new_iterables_index_count[index1] = 0;
-      iterables_empty_rows.push_back(index1 + old_data_size);
+      iterables_empty_rows.push_back(index1 + insert_point);
+      //empty_rows++;
+      l++;
       continue;
     }
     auto ks = k.size();
@@ -147,7 +150,7 @@ dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
     for (std::size_t j = 0; j < ks; ++j) {
       new_values.push_back(k[j]);
       //      unsorted_index[l] = index1;
-      unsorted_index.push_back(index1 + old_data_size);
+      unsorted_index.push_back(index1 + insert_point);
       l++;
     }
   }
@@ -202,9 +205,9 @@ dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
   for(auto & f : new_filter_status) {
     // if all elements of iterable data field filtered out - set filter bit
     if(f.second == new_iterables_index_count[f.first])
-      crossfilter->set_bit_for_dimension(f.first + itics, dimension_offset, dimension_bit_index);
+      crossfilter->set_bit_for_dimension(f.first + itics, this->dimension_offset, this->dimension_bit_index);
   }
-  new_data_size = (isIterable) ? l : new_data_size;
+  new_data_size = l; //(isIterable) ? l : new_data_size;
 
   if (values.empty()) {
     values = new_values;
@@ -223,7 +226,7 @@ dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
   values.resize(old_values.size() + new_values.size());
   indexes.resize(old_values.size() + new_values.size());
   if (isIterable) {
-    iterables_index_count.insert(iterables_index_count.end(), new_iterables_index_count.begin(), new_iterables_index_count.end());
+    iterables_index_count.insert(iterables_index_count.begin()+insert_point, new_iterables_index_count.begin(), new_iterables_index_count.end());
   }
   // merge oldValues and new_values
   std::size_t index5 = 0;
@@ -231,7 +234,7 @@ dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
   std::size_t i2 = 0;
   auto nvs = new_values.size();
   auto ovs = old_values.size();
-  
+
   for (; i1 < ovs && i2 < nvs; ++index5) {
     if (new_values[i2] < old_values[i1]) {
       values[index5] = new_values[i2];
@@ -239,13 +242,17 @@ dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
       i2++;
     } else {
       values[index5] = old_values[i1];
-      indexes[index5] = old_indexes[i1];
+      auto oi = old_indexes[i1];
+      indexes[index5] = (oi >= insert_point) ? oi + new_data_size + empty_rows: oi;
+      // indexes[index5] = old_indexes[i1];  
       i1++;
     }
   }
   for (; i1 < ovs; i1++, index5++) {
     values[index5] = old_values[i1];
-    indexes[index5] = old_indexes[i1];
+    auto oi = old_indexes[i1];
+    indexes[index5] = (oi >= insert_point) ? oi + new_data_size : oi;
+    //    indexes[index5] = old_indexes[i1];
   }
 
   for (; i2 < nvs; i2++, index5++) {
@@ -258,11 +265,11 @@ dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
   high = std::get<1>(bounds);
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 template<bool Enable>
 inline
-std::enable_if_t<!isIterable && Enable>
-dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
+std::enable_if_t<!dimension_impl<V,T,I,H>::isIterable && Enable>
+dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, data_iterator end) {
   old_data_size = values.size();
 
   std::size_t new_data_size = std::distance(begin, end);
@@ -271,11 +278,11 @@ dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
   new_values.clear();
   new_values.reserve(new_indexes.size());
 
-  std::iota(new_indexes.begin(), new_indexes.end(), values.size());
+  std::iota(new_indexes.begin(), new_indexes.end(), insert_point);
 
 
 #ifndef USE_STD_SORT
-  auto vs = values.size();
+  auto vs = insert_point;//values.size();
   DualPivotsort2::quicksort<std::size_t, value_type_t>(new_indexes, 0, new_indexes.size(),
                                                        [&begin, &vs, this](auto r) { return getter(*(begin + r - vs));});
 #else
@@ -287,7 +294,8 @@ dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
 #endif
 
   for (auto &i : new_indexes) {
-    new_values.push_back(getter(*(begin + i - values.size())));
+    //    new_values.push_back(getter(*(begin + i - values.size())));
+    new_values.push_back(getter(*(begin + i - insert_point)));
   }
   auto bounds = refilter(new_values);
   auto lo1 = std::get<0>(bounds);
@@ -296,15 +304,15 @@ dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
     for (std::size_t index2 = 0; index2 < new_data_size; ++index2) {
       if (!refilter_function(new_values[index2])) {
         crossfilter->set_bit_for_dimension(new_indexes[index2],
-                                       dimension_offset, dimension_bit_index);
+                                           this->dimension_offset, this->dimension_bit_index);
       }
     }
   } else {
     for (std::size_t i = 0; i < lo1; ++i) {
-      crossfilter->set_bit_for_dimension(new_indexes[i], dimension_offset, dimension_bit_index);
+      crossfilter->set_bit_for_dimension(new_indexes[i], this->dimension_offset, this->dimension_bit_index);
     }
     for (std::size_t i = hi1; i < new_data_size; ++i) {
-      crossfilter->set_bit_for_dimension(new_indexes[i], dimension_offset, dimension_bit_index);
+      crossfilter->set_bit_for_dimension(new_indexes[i], this->dimension_offset, this->dimension_bit_index);
     }
   }
 
@@ -337,13 +345,16 @@ dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
       i2++;
     } else {
       values[index5] = old_values[i1];
-      indexes[index5] = old_indexes[i1];
+      auto oi = old_indexes[i1];
+      indexes[index5] = (oi >= insert_point) ? oi + new_data_size : oi;
       i1++;
     }
   }
   for (; i1 < ovs; i1++, index5++) {
     values[index5] = old_values[i1];
-    indexes[index5] = old_indexes[i1];
+    auto oi = old_indexes[i1];
+    indexes[index5] = (oi >= insert_point) ? oi + new_data_size : oi;
+    //    indexes[index5] = old_indexes[i1];
   }
 
   for (; i2 < nvs; i2++, index5++) {
@@ -356,9 +367,9 @@ dimension_impl<V, T, isIterable>::add(data_iterator begin, data_iterator end) {
   high = std::get<1>(bounds);
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-void  dimension_impl<V, T, isIterable>::remove_data_iterable(const std::vector<int64_t> &re_index) {
+void  dimension_impl<V, T, I, H>::remove_data_iterable(const std::vector<int64_t> &re_index) {
   if (isIterable) {
     std::size_t i1 = 0;
 
@@ -404,9 +415,9 @@ void  dimension_impl<V, T, isIterable>::remove_data_iterable(const std::vector<i
   remove_signal(re_index);
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-void  dimension_impl<V, T, isIterable>::remove_data(const std::vector<int64_t> &re_index) {
+void  dimension_impl<V, T, I, H>::remove_data(const std::vector<int64_t> &re_index) {
   if (isIterable) {
     remove_data_iterable(re_index);
     return;
@@ -441,12 +452,12 @@ void  dimension_impl<V, T, isIterable>::remove_data(const std::vector<int64_t> &
   remove_signal(re_index);
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
 std::tuple<std::size_t, std::size_t>
-dimension_impl<V, T, isIterable>::refilter_range(const value_type_t & left,
-                                                 const value_type_t & right,
-                                                 const std::vector<value_type_t> & data) {
+dimension_impl<V, T, I, H>::refilter_range(const value_type_t & left,
+                                           const value_type_t & right,
+                                           const std::vector<value_type_t> & data) {
   auto filter_low = std::lower_bound(data.begin(), data.end(), left);
   auto filter_high = std::lower_bound(data.begin(), data.end(), right);
   std::size_t filter_low_index = std::distance(data.begin(), filter_low);
@@ -455,11 +466,11 @@ dimension_impl<V, T, isIterable>::refilter_range(const value_type_t & left,
       std::move(filter_low_index), std::move(filter_high_index));
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
 std::tuple<std::size_t, std::size_t>
-dimension_impl<V, T, isIterable>::refilter_exact(const value_type_t & value,
-                                                 const std::vector<value_type_t> & data) {
+dimension_impl<V, T, I, H>::refilter_exact(const value_type_t & value,
+                                           const std::vector<value_type_t> & data) {
   auto filters = std::equal_range(data.begin(), data.end(), value);
   std::size_t filter_low_index = std::distance(data.begin(), filters.first);
   std::size_t filter_high_index = std::distance(data.begin(), filters.second);
@@ -468,11 +479,11 @@ dimension_impl<V, T, isIterable>::refilter_exact(const value_type_t & value,
       std::move(filter_low_index), std::move(filter_high_index));
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 template<bool Enable>
 inline
-std::enable_if_t<isIterable && Enable>
-dimension_impl<V, T, isIterable>::do_filter(std::size_t filter_low_index, std::size_t filter_high_index) {
+std::enable_if_t<dimension_impl<V,T,I,H>::isIterable && Enable>
+dimension_impl<V, T, I, H>::do_filter(std::size_t filter_low_index, std::size_t filter_high_index) {
   std::unordered_map<std::size_t, std::size_t> filter_status_added;
   std::unordered_map<std::size_t, std::size_t> filter_status_removed;
   // std::vector<std::size_t> added;
@@ -487,62 +498,62 @@ dimension_impl<V, T, isIterable>::do_filter(std::size_t filter_low_index, std::s
     refilter_function_flag = false;
     for(std::size_t i = 0; i < indexes.size(); i++) {
       if(i >= filter_low_index && i < filter_high_index) {
-        if(crossfilter->get_bit_for_dimension(indexes[i],dimension_offset, dimension_bit_index)) {
+        if(crossfilter->get_bit_for_dimension(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
           filter_status_added[indexes[i]] += 1;
         }
       } else {
-        if(!crossfilter->get_bit_for_dimension(indexes[i],dimension_offset, dimension_bit_index)) {
+        if(!crossfilter->get_bit_for_dimension(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
           filter_status_removed[indexes[i]] += 1;
         }
       }
     }
   } else {
 
-  if (filter_low_index < low) {
-    for (auto i = filter_low_index; i < std::min(low, filter_high_index); ++i) {
-      auto ind = indexes[i];
-      auto & status = filter_status_added[ind];
-      if(status == 0)  {
-        if(crossfilter->get_bit_for_dimension(ind,dimension_offset, dimension_bit_index)) {
+    if (filter_low_index < low) {
+      for (auto i = filter_low_index; i < std::min(low, filter_high_index); ++i) {
+        auto ind = indexes[i];
+        auto & status = filter_status_added[ind];
+        if(status == 0)  {
+          if(crossfilter->get_bit_for_dimension(ind,this->dimension_offset, this->dimension_bit_index)) {
+            status += 1;
+          }
+        } else {
           status += 1;
         }
-      } else {
-        status += 1;
-      }
 
-    }
-  } else if (filter_low_index > low) {
-    for (auto i = low; i < std::min(filter_low_index, high); ++i) {
-      filter_status_removed[indexes[i]] +=1;
-    }
-  }
-  // Fast incremental update based on previous hi index.
-  if (filter_high_index > high) {
-    for (auto i = std::max(filter_low_index, high); i < filter_high_index; ++i) {
-      auto ind = indexes[i];
-      auto & status = filter_status_added[ind];
-      if(status == 0)  {
-        if(crossfilter->get_bit_for_dimension(indexes[i],dimension_offset, dimension_bit_index)) {
-          status += 1;
-        }
-      } else {
-        status += 1;
+      }
+    } else if (filter_low_index > low) {
+      for (auto i = low; i < std::min(filter_low_index, high); ++i) {
+        filter_status_removed[indexes[i]] +=1;
       }
     }
-  } else if (filter_high_index < high) {
-    for (auto i = std::max(low, filter_high_index); i < high; ++i) {
-      filter_status_removed[indexes[i]] += 1;
+    // Fast incremental update based on previous hi index.
+    if (filter_high_index > high) {
+      for (auto i = std::max(filter_low_index, high); i < filter_high_index; ++i) {
+        auto ind = indexes[i];
+        auto & status = filter_status_added[ind];
+        if(status == 0)  {
+          if(crossfilter->get_bit_for_dimension(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
+            status += 1;
+          }
+        } else {
+          status += 1;
+        }
+      }
+    } else if (filter_high_index < high) {
+      for (auto i = std::max(low, filter_high_index); i < high; ++i) {
+        filter_status_removed[indexes[i]] += 1;
+      }
     }
-  }
   }
   if(filter_low_index == 0 && filter_high_index == values.size()) {
     for(auto i : iterables_empty_rows) {
-      if(crossfilter->get_bit_for_dimension(i,dimension_offset,dimension_bit_index))
+      if(crossfilter->get_bit_for_dimension(i,this->dimension_offset,this->dimension_bit_index))
         filter_status_added[i] = 0;
     }
   } else {
     for(auto i : iterables_empty_rows) {
-      if(!crossfilter->get_bit_for_dimension(i,dimension_offset,dimension_bit_index))
+      if(!crossfilter->get_bit_for_dimension(i,this->dimension_offset,this->dimension_bit_index))
         filter_status_removed[i] = 0;
     }
   }
@@ -550,7 +561,7 @@ dimension_impl<V, T, isIterable>::do_filter(std::size_t filter_low_index, std::s
   removed.reserve(filter_status_removed.size()/2);
   for(auto f : filter_status_added) {
     if(!isIterable || f.second == iterables_index_count[f.first]) {
-      crossfilter->reset_bit_for_dimension(f.first,dimension_offset,dimension_bit_index);
+      crossfilter->reset_bit_for_dimension(f.first,this->dimension_offset,this->dimension_bit_index);
       added.push_back(f.first);
     }
   }
@@ -558,22 +569,22 @@ dimension_impl<V, T, isIterable>::do_filter(std::size_t filter_low_index, std::s
   for(auto f : filter_status_removed) {
     if(!isIterable || f.second == iterables_index_count[f.first]) {
       removed.push_back(f.first);
-      crossfilter->set_bit_for_dimension(f.first,dimension_offset,dimension_bit_index);
+      crossfilter->set_bit_for_dimension(f.first,this->dimension_offset,this->dimension_bit_index);
     }
   }
 
   low = filter_low_index;
   high = filter_high_index;
-  crossfilter->emit_filter_signal(dimension_offset, dimension_bit_index, added, removed);
+  crossfilter->emit_filter_signal(this->dimension_offset, this->dimension_bit_index, added, removed);
   crossfilter->trigger_on_change("filtered");
   
 }
-template<typename V, typename T, bool isIterable>
-inline void dimension_impl<V, T, isIterable>::filter1(std::vector<std::size_t> & added, std::vector<std::size_t>& removed, std::size_t filter_low_index, std::size_t filter_high_index) {
+template<typename V, typename T, typename I, typename H>
+inline void dimension_impl<V, T, I, H>::filter1(std::vector<std::size_t> & added, std::vector<std::size_t>& removed, std::size_t filter_low_index, std::size_t filter_high_index) {
   if (filter_low_index < low) {
     for (auto i = filter_low_index; i < std::min(low, filter_high_index); ++i) {
       auto ind = indexes[i];
-      if(crossfilter->get_bit_for_dimension(ind,dimension_offset, dimension_bit_index)) {
+      if(crossfilter->get_bit_for_dimension(ind,this->dimension_offset, this->dimension_bit_index)) {
         added.push_back(ind);
       }
     }
@@ -583,13 +594,13 @@ inline void dimension_impl<V, T, isIterable>::filter1(std::vector<std::size_t> &
     }
   }
 }
-template<typename V, typename T, bool isIterable>
-inline void dimension_impl<V, T, isIterable>::filter2(std::vector<std::size_t> & added, std::vector<std::size_t>& removed, std::size_t filter_low_index, std::size_t filter_high_index) {
+template<typename V, typename T, typename I, typename H>
+inline void dimension_impl<V, T, I, H>::filter2(std::vector<std::size_t> & added, std::vector<std::size_t>& removed, std::size_t filter_low_index, std::size_t filter_high_index) {
   // Fast incremental update based on previous hi index.
   if (filter_high_index > high) {
     for (auto i = std::max(filter_low_index, high); i < filter_high_index; ++i) {
       auto ind = indexes[i];
-      if(crossfilter->get_bit_for_dimension(ind,dimension_offset, dimension_bit_index)) {
+      if(crossfilter->get_bit_for_dimension(ind,this->dimension_offset, this->dimension_bit_index)) {
         added.push_back(ind);
       }
     }
@@ -601,11 +612,11 @@ inline void dimension_impl<V, T, isIterable>::filter2(std::vector<std::size_t> &
 }
 
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 template<bool Enable>
 inline
-std::enable_if_t<!isIterable && Enable>
-dimension_impl<V, T, isIterable>::do_filter(std::size_t filter_low_index, std::size_t filter_high_index) {
+std::enable_if_t<!dimension_impl<V,T,I,H>::isIterable && Enable>
+dimension_impl<V, T, I, H>::do_filter(std::size_t filter_low_index, std::size_t filter_high_index) {
   // std::vector<std::size_t> added;
   // std::vector<std::size_t> removed;
   added.clear();
@@ -618,11 +629,11 @@ dimension_impl<V, T, isIterable>::do_filter(std::size_t filter_low_index, std::s
     refilter_function_flag = false;
     for(std::size_t i = 0; i < indexes.size(); i++) {
       if(i >= filter_low_index && i < filter_high_index) {
-        if(crossfilter->get_bit_for_dimension(indexes[i],dimension_offset, dimension_bit_index)) {
+        if(crossfilter->get_bit_for_dimension(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
           added.push_back(indexes[i]);
         }
       } else {
-        if(!crossfilter->get_bit_for_dimension(indexes[i],dimension_offset, dimension_bit_index)) {
+        if(!crossfilter->get_bit_for_dimension(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
           removed.push_back(indexes[i]);
         }
       }
@@ -632,58 +643,58 @@ dimension_impl<V, T, isIterable>::do_filter(std::size_t filter_low_index, std::s
     filter2(added,removed,filter_low_index, filter_high_index);
   }
   for(auto f : added) {
-    crossfilter->reset_bit_for_dimension(f,dimension_offset,dimension_bit_index);
+    crossfilter->reset_bit_for_dimension(f,this->dimension_offset,this->dimension_bit_index);
   }
 
   for(auto f : removed) {
-    crossfilter->set_bit_for_dimension(f,dimension_offset,dimension_bit_index);
+    crossfilter->set_bit_for_dimension(f,this->dimension_offset,this->dimension_bit_index);
   }
 
   low = filter_low_index;
   high = filter_high_index;
-  crossfilter->emit_filter_signal(dimension_offset, dimension_bit_index, added, removed);
+  crossfilter->emit_filter_signal(this->dimension_offset, this->dimension_bit_index, added, removed);
   crossfilter->trigger_on_change("filtered");
 }
 
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-void  dimension_impl<V, T, isIterable>::filter_range(const value_type_t & left, const value_type_t &right) {
+void  dimension_impl<V, T, I, H>::filter_range(const value_type_t & left, const value_type_t &right) {
   //  refilterFunctionFlag = false;
   refilter = [left, right, this](const std::vector<value_type_t> &val) {
-    return this->refilter_range(left, right, val);
-  };
+               return this->refilter_range(left, right, val);
+             };
   auto bounds = refilter(values);
   auto filter_low_index = std::get<0>(bounds);
   auto filter_high_index = std::get<1>(bounds);
   do_filter(filter_low_index, filter_high_index);
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-void  dimension_impl<V, T, isIterable>::filter_exact(const value_type_t & value) {
+void  dimension_impl<V, T, I, H>::filter_exact(const value_type_t & value) {
   refilter = [value, this](const std::vector<value_type_t> &val) {
-    return this->refilter_exact(value, val);
-  };
+               return this->refilter_exact(value, val);
+             };
   auto bounds = refilter(values);
   auto filter_low_index = std::get<0>(bounds);
   auto filter_high_index = std::get<1>(bounds);
   do_filter(filter_low_index, filter_high_index);
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-void  dimension_impl<V, T, isIterable>::filter_all() {
+void  dimension_impl<V, T, I, H>::filter_all() {
   refilter = [](const std::vector<value_type_t> &val) {
-    return std::make_tuple<std::size_t, std::size_t>(0, val.size());
-  };
+               return std::make_tuple<std::size_t, std::size_t>(0, val.size());
+             };
 
   do_filter(0, values.size());
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
-void  dimension_impl<V, T, isIterable>::filter_with_predicate(
+void  dimension_impl<V, T, I, H>::filter_with_predicate(
     std::function<bool(const value_type_t&)> filter_func) {
   refilter = [](const std::vector<value_type_t> &val) {
                return std::make_tuple<std::size_t, std::size_t>(0, val.size());
@@ -697,21 +708,21 @@ void  dimension_impl<V, T, isIterable>::filter_with_predicate(
     removed.clear();
     
     for (std::size_t i = 0; i < values.size(); i++) {
-      if (crossfilter->get_bit_for_dimension(indexes[i], dimension_offset, dimension_bit_index)
+      if (crossfilter->get_bit_for_dimension(indexes[i], this->dimension_offset, this->dimension_bit_index)
           && filter_func(values[i])) {
         added.push_back(indexes[i]);
-        crossfilter->reset_bit_for_dimension(indexes[i], dimension_offset, dimension_bit_index);
+        crossfilter->reset_bit_for_dimension(indexes[i], this->dimension_offset, this->dimension_bit_index);
         continue;
       }
-      if (!crossfilter->get_bit_for_dimension(indexes[i], dimension_offset, dimension_bit_index)
+      if (!crossfilter->get_bit_for_dimension(indexes[i], this->dimension_offset, this->dimension_bit_index)
           && !filter_func(values[i])) {
         removed.push_back(indexes[i]);
-        crossfilter->set_bit_for_dimension(indexes[i], dimension_offset, dimension_bit_index);
+        crossfilter->set_bit_for_dimension(indexes[i], this->dimension_offset, this->dimension_bit_index);
       }
     }
     low = 0;
     high = values.size();
-    crossfilter->emit_filter_signal(dimension_offset, dimension_bit_index, added, removed);
+    crossfilter->emit_filter_signal(this->dimension_offset, this->dimension_bit_index, added, removed);
   } else {
     std::unordered_map<std::size_t, std::size_t> filter_status_added;
     std::unordered_map<std::size_t, std::size_t> filter_status_removed;
@@ -723,7 +734,7 @@ void  dimension_impl<V, T, isIterable>::filter_with_predicate(
     removed.clear();
     
     for(std::size_t i = 0; i < values.size(); i++) {
-      bool filter_status = crossfilter->get_bit_for_dimension(indexes[i], dimension_offset, dimension_bit_index);
+      bool filter_status = crossfilter->get_bit_for_dimension(indexes[i], this->dimension_offset, this->dimension_bit_index);
       auto filter_test = filter_func(values[i]);
       if(filter_status == false) { // item is in filter
         if(!filter_test) {
@@ -738,12 +749,12 @@ void  dimension_impl<V, T, isIterable>::filter_with_predicate(
       }
     }
     for(auto i : iterables_empty_rows) {
-      if(!crossfilter->get_bit_for_dimension(i,dimension_offset,dimension_bit_index))
+      if(!crossfilter->get_bit_for_dimension(i,this->dimension_offset,this->dimension_bit_index))
         filter_status_removed[i] = 0;
     }
     for(auto f : filter_status_added) {
       if(f.second != 0) {
-        crossfilter->reset_bit_for_dimension(f.first,dimension_offset,dimension_bit_index);
+        crossfilter->reset_bit_for_dimension(f.first,this->dimension_offset,this->dimension_bit_index);
         added.push_back(f.first);
       }
     }
@@ -751,62 +762,115 @@ void  dimension_impl<V, T, isIterable>::filter_with_predicate(
     for(auto f : filter_status_removed) {
       if(f.second == iterables_index_count[f.first]) {
         removed.push_back(f.first);
-        crossfilter->set_bit_for_dimension(f.first,dimension_offset,dimension_bit_index);
+        crossfilter->set_bit_for_dimension(f.first,this->dimension_offset,this->dimension_bit_index);
       }
     }
     refilter_function = filter_func;
     refilter_function_flag = true;
     low = 0;
     high = values.size();
-    crossfilter->emit_filter_signal(dimension_offset, dimension_bit_index, added, removed);
+    crossfilter->emit_filter_signal(this->dimension_offset, this->dimension_bit_index, added, removed);
 
   }
   crossfilter->trigger_on_change("filtered");
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
 auto
-dimension_impl<V, T, isIterable>::bottom(int64_t k, int64_t bottom_offset) ->std::vector<record_type_t> {
+dimension_impl<V, T, I, H>::bottom(int64_t k, int64_t bottom_offset) const noexcept ->std::vector<record_type_t> {
   if (low == high && low == crossfilter->size()  && iterables_empty_rows.empty())
     return std::vector<record_type_t>();
-  return crossfilter->bottom(low, high, k, bottom_offset, indexes, iterables_empty_rows);
+  std::vector<T> result;
+  auto high_iter = indexes.begin();
+  auto low_iter = indexes.begin();
+  std::advance(high_iter, high);
+  std::advance(low_iter, low);
+  int64_t result_size = 0;
+  for(auto p = iterables_empty_rows.begin(); p < iterables_empty_rows.end() && result_size < k; p++) {
+    if(crossfilter->zero(*p)) {
+      if (bottom_offset-- > 0)
+        continue;
+      result.push_back(crossfilter->get_raw(*p));
+      result_size++;
+    }
+  }
+  if (low_iter > high_iter)
+    return result;
+  for (; low_iter < high_iter && result_size < k; low_iter++) {
+    if (crossfilter->zero(*low_iter)) {
+      if (bottom_offset-- > 0)
+        continue;
+      result.push_back(crossfilter->get_raw(*low_iter));
+      result_size++;
+    }
+  }
+  return result;
+
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 inline
 auto
-dimension_impl<V, T, isIterable>::top(int64_t k, int64_t top_offset) -> std::vector<record_type_t> {
+dimension_impl<V, T, I, H>::top(int64_t k, int64_t top_offset) const noexcept -> std::vector<record_type_t> {
   if (low == high && low == crossfilter->size() && iterables_empty_rows.empty())
     return std::vector<record_type_t>();
+  std::vector<T> result;
+  auto high_iter = indexes.begin();
+  auto low_iter = indexes.begin();
+  std::advance(high_iter, high - 1);
+  std::advance(low_iter, low);
+  int64_t result_size = 0;
 
-  return crossfilter->top(low, high, k, top_offset, indexes, iterables_empty_rows);
+  if  (high_iter >= low_iter) {
+    for (; high_iter >= low_iter && result_size < k ; high_iter--) {
+      if (crossfilter->zero(*high_iter)) {
+        if (top_offset-- > 0)
+          continue;
+        result.push_back(crossfilter->get_raw(*high_iter));
+        result_size++;
+      }
+    }
+  }
+  if(result_size < k) {
+    for(auto p = iterables_empty_rows.begin(); p < iterables_empty_rows.end() && result_size < k; p++) {
+      if(crossfilter->zero(*p)) {
+        if (top_offset-- > 0)
+          continue;
+        result.push_back(crossfilter->get_raw(*p));
+        result_size++;
+      }
+    }
+  }
+  return result;
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 template <typename K, typename R>
 inline
 auto
-dimension_impl<V, T, isIterable>::feature(std::function<K(const value_type_t &)> key,
-                                          std::function<R(R &, const record_type_t &, bool)> add_func_,
-                                          std::function<R(R &, const record_type_t &, bool)> remove_func_,
-                                          std::function<R()> initial_func_)-> cross::feature<K, R, dimension<V,T,isIterable>, false> {
-  cross::feature<K, R, dimension<V,T,isIterable>, false> g(this, key, add_func_, remove_func_, initial_func_);
+dimension_impl<V, T, I, H>::feature(cross::dimension<V,T,I,H> *base,
+                                    std::function<K(const value_type_t &)> key,
+                                    std::function<R(R &, const record_type_t &, bool)> add_func_,  
+                                    std::function<R(R &, const record_type_t &, bool)> remove_func_,
+                                    std::function<R()> initial_func_) noexcept -> cross::feature<K, R, this_type_t,false> {
+  cross::feature<K, R, this_type_t, false> g(base, key, add_func_, remove_func_, initial_func_);
   g.add(values, indexes, 0, crossfilter->size());
   return g;
 }
 
-template<typename V, typename T, bool isIterable>
+template<typename V, typename T, typename I, typename H>
 template <typename AddFunc, typename RemoveFunc, typename InitialFunc>
 inline
 auto
-dimension_impl<V, T, isIterable>::feature_all(AddFunc add_func_,
-                                              RemoveFunc remove_func_,
-                                              InitialFunc initial_func_
-                                              )-> cross::feature<std::size_t, decltype(initial_func_()), dimension<V,T,isIterable>, true> {
-  cross::feature<std::size_t, decltype(initial_func_()), dimension<V,T,isIterable>, true> g(this,
-                                                                    [](const value_type_t &) { return std::size_t(0); },
-                                                                    add_func_, remove_func_, initial_func_);
+dimension_impl<V, T, I, H>::feature_all(cross::dimension<V,T,I,H> *base,
+                                        AddFunc add_func_,
+                                        RemoveFunc remove_func_,
+                                        InitialFunc initial_func_
+                                        ) noexcept -> cross::feature<std::size_t, decltype(initial_func_()), this_type_t, true> {
+  cross::feature<std::size_t, decltype(initial_func_()), this_type_t, true> g(base,
+                                                                              [](const value_type_t &) { return std::size_t(0); },
+                                                                              add_func_, remove_func_, initial_func_);
   g.add(values, indexes, 0, crossfilter->size());
   return g;
 }

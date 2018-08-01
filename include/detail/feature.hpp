@@ -12,11 +12,14 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <utility>
 //#include <boost/signals2.hpp>
 #include "detail/feature_impl.hpp"
+#include "detail/crossfilter_impl.hpp"
+#include "detail/dimension_impl.hpp"
+
 namespace cross {
 template <typename Key, typename Reduce, typename Dimension,
           bool isGroupAll = false>
 struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
-  using feature_impl_t = impl::feature_impl<Key, Reduce, Dimension, isGroupAll>;
+  using feature_impl_t = impl::feature_impl<Key, Reduce,Dimension, isGroupAll>;
 
  public:
   using group_type_t = typename feature_impl_t::group_type_t;
@@ -27,29 +30,30 @@ struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
   using this_type_t = feature<Key, Reduce, Dimension, isGroupAll>;
 
  private:
-  friend  typename Dimension::base_type_t;
-  
-  template<typename KeyFunc, typename AddFunc, typename RemoveFunc, typename InitialFunc>
-  feature(typename Dimension::base_type_t *dim, KeyFunc key_,
-        AddFunc add_func_,
-        RemoveFunc remove_func_,
-        InitialFunc initial_func_)
+
+  template <typename T,typename H> friend struct impl::filter_impl;
+  template <typename ,typename , typename , typename> friend struct impl::dimension_impl;
+  template<typename KeyFunc, typename AddFunc, typename RemoveFunc, typename InitialFunc, typename Base>
+  feature(Base *dim, KeyFunc key_,
+          AddFunc add_func_,
+          RemoveFunc remove_func_,
+          InitialFunc initial_func_)
       : feature_impl_t(dim, key_, add_func_, remove_func_, initial_func_) {}
 
 
  public:
 
-  void dispose() { impl::feature_impl<Key, Reduce, Dimension, isGroupAll>::dispose();}
+  void dispose() { feature_impl_t::dispose();}
 
   feature(feature<Key, Reduce, Dimension, isGroupAll> && g):
       feature_impl_t(std::move(g)) {}
-      //      feature_impl_t<Key, Reduce, Dimension, isGroupAll>(std::move(g)) {}
+      //      feature_impl_t<Key, Reduce, Record, isGroupAll>(std::move(g)) {}
 
   /**
      Returns a new array containing the top k groups,
      according to the group order of the associated reduce value. The returned array is in descending order by reduce value.
    */
-  std::vector<group_type_t> top(std::size_t k) {
+  std::vector<group_type_t> top(std::size_t k) noexcept {
     return feature_impl_t::top(k);
   }
 
@@ -58,21 +62,21 @@ struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
      according to the order defined by orderFunc of the associated reduce value.
    */
   template<typename OrderFunc>
-  std::vector<group_type_t> top(std::size_t k, OrderFunc orderFunc) {
+  std::vector<group_type_t> top(std::size_t k, OrderFunc orderFunc) noexcept {
     return feature_impl_t::top(k, orderFunc);
   }
 
   /**
      Returns the array of all groups, in ascending natural order by key. 
    */
-  std::vector<group_type_t> &all() {
+  std::vector<group_type_t> &all() noexcept{
     return feature_impl_t::all();
   }
 
   /**
      Equivalent to all()[0].second.
    */
-  reduce_type_t value() {
+  reduce_type_t value() noexcept {
     return feature_impl_t::value();
   }
 
@@ -82,7 +86,7 @@ struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
      which assumes that the reduction values are naturally-ordered (such as simple counts or sums).
    */
   template<typename OrderFunc>
-  this_type_t &   order(OrderFunc value) {
+  this_type_t &   order(OrderFunc value) noexcept {
     feature_impl_t::order(value);
     return *this;
   }
@@ -90,19 +94,16 @@ struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
   /**
      A convenience method for using natural order for reduce values. Returns this grouping.
    */
-  this_type_t & order_natural() {
+  this_type_t & order_natural() noexcept{
     feature_impl_t::order_natural();
     return *this;
   }
   /**
      Returns the number of distinct values in the group, independent of any filters; the cardinality.
    */
-  std::size_t size() const { return feature_impl_t::size(); }
+  std::size_t size() const noexcept { return feature_impl_t::size(); }
 
-  // std::vector<group_type_t> & all2() {
-  //   return feature_impl_t::all();
-  // }
-  
+ 
 };
 } //namespace cross
 #endif

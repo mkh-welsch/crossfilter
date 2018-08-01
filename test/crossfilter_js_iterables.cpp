@@ -15,12 +15,12 @@ auto Infinity = std::numeric_limits<int>::max();
 
 struct Fixture {
   cross::filter<Record> cr;
-  cross::dimension<std::string,Record,false> date;
-  cross::dimension<int,Record,false> quantity;
-  cross::dimension<int,Record,false> total;
-  cross::dimension<int,Record,false> tip;
-  cross::dimension<std::string,Record,false> type;
-  cross::dimension<std::vector<int>,Record,true> tags;
+  cross::dimension<std::string,Record> date;
+  cross::dimension<int,Record> quantity;
+  cross::dimension<int,Record> total;
+  cross::dimension<int,Record> tip;
+  cross::dimension<std::string,Record> type;
+  cross::dimension<std::vector<int>,Record, cross::iterable> tags;
   //  cross::Dimension<int,cross::filterImpl<Record>,true> tags;
   Fixture() {
     Record data[] = {
@@ -118,7 +118,7 @@ struct RecEmpty {
 
 struct Fixture2 {
   cross::filter<RecEmpty> cr;
-  cross::dimension<std::vector<std::string>,RecEmpty,true> labels;
+  cross::dimension<std::vector<std::string>,RecEmpty,cross::iterable> labels;
   Fixture2() {
     RecEmpty data[] = {
       {"apha", {}},
