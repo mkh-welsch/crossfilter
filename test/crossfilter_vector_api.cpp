@@ -143,7 +143,8 @@ BOOST_AUTO_TEST_CASE(back) {
   BOOST_TEST((Record2{4,5,"aba"}) == f.data.back());
   f.data.push_back(Record2{5,6,"abc"});
   BOOST_TEST((Record2{5,6,"abc"}) == f.data.back());
-  f.data.remove([&f](auto &, int i) { return std::size_t(i) == f.data.size()-1;});
+  auto s = f.data.size();
+  f.data.remove([s](auto &, int i) { return std::size_t(i) == s-1;});
   BOOST_TEST((Record2{4,5,"aba"}) == f.data.back());
 }
 

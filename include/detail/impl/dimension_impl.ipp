@@ -7,9 +7,11 @@
 #include <numeric>
 #include <unordered_map>
 #include "crossfilter.hpp"
+//#define USE_STD_SORT
 #ifndef USE_STD_SORT
 #include "detail/impl/dual_pivot_sort2.hpp"
 #endif
+
 namespace cross {
 namespace impl {
 template<typename V, typename T, typename I, typename H>
@@ -125,15 +127,16 @@ template<bool Enable>
 inline
 std::enable_if_t<dimension_impl<V,T,I,H>::isIterable && Enable>
 dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, data_iterator end) {
-
+  // auto logger = spdlog::get("console");
+  // if(logger) logger->info("dimension_iter _add start");
   new_values.clear();
   new_indexes.clear();
-  
+  // if(logger) logger->info("dimension _add start");
   std::size_t new_data_size = std::distance(begin, end);
   old_data_size = crossfilter->size() - new_data_size;
   std::vector<std::size_t> unsorted_index;
   std::size_t l = 0;
-  std::vector<std::size_t> new_iterables_index_count(new_data_size);
+  std::vector<std::size_t> new_iterables_index_count(new_data_size); // map indexes at new_data to size of conteiner
   auto empty_rows = 0;
   for (std::size_t index1 = 0; index1 < new_data_size; index1++) {
     auto k = getter(*(begin + index1));
@@ -141,7 +144,6 @@ dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, d
     if (k.empty()) {
       new_iterables_index_count[index1] = 0;
       iterables_empty_rows.push_back(index1 + insert_point);
-      //empty_rows++;
       l++;
       continue;
     }
@@ -149,7 +151,6 @@ dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, d
     new_iterables_index_count[index1] = ks;
     for (std::size_t j = 0; j < ks; ++j) {
       new_values.push_back(k[j]);
-      //      unsorted_index[l] = index1;
       unsorted_index.push_back(index1 + insert_point);
       l++;
     }
@@ -158,6 +159,7 @@ dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, d
 
 
   std::iota(new_index.begin(), new_index.end(), 0);
+  // if(logger)   logger->info("dimension_iter _add prepare");
 #ifndef USE_STD_SORT
   DualPivotsort2::quicksort<std::size_t, value_type_t>(new_index, 0, new_index.size(),
                                                        [this](auto r) { return new_values[r];});
@@ -167,18 +169,20 @@ dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, d
               return new_values[lhs] < new_values[rhs];
             });
 #endif
+  //  if(logger)   logger->info("dimension_iter _add sort {}", new_index.size());
   std::vector<value_type_t> tmp_values;
+  tmp_values.reserve(new_index.size());
   std::vector<std::size_t> tmp_index;
+  tmp_index.reserve(new_index.size());
 
   for (auto &i : new_index) {
     tmp_values.push_back(new_values[i]);
     tmp_index.push_back(unsorted_index[i]);
-    //    tmpIndex.push_back(i);
   }
   std::swap(tmp_values, new_values);
   std::swap(tmp_index, new_indexes);
 
-
+  //  if(logger)   logger->info("dimension_iter add refilter");
   auto bounds = refilter(new_values);
   auto lo1 = std::get<0>(bounds);
   auto hi1 = std::get<1>(bounds);
@@ -187,28 +191,27 @@ dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, d
   if(refilter_function_flag) {
     for(std::size_t i = 0; i < new_values.size(); i++) {
       if(!refilter_function(new_values[i]))
-        new_filter_status[new_indexes[i]] += 1;
+        new_filter_status[new_indexes[i]-insert_point] += 1;
     }
   } else {
     for (std::size_t i = 0; i < lo1; ++i) {
-      new_filter_status[new_indexes[i]] += 1;
+      new_filter_status[new_indexes[i]-insert_point] += 1;
     }
     auto nvs = new_values.size();
-    
+
     for (std::size_t i = hi1; i < nvs; ++i) {
-      new_filter_status[new_indexes[i]] += 1;
+      new_filter_status[new_indexes[i]-insert_point] += 1;
     }
   }
 
-  auto itics = iterables_index_count.size();
-  
   for(auto & f : new_filter_status) {
     // if all elements of iterable data field filtered out - set filter bit
     if(f.second == new_iterables_index_count[f.first])
-      crossfilter->set_bit_for_dimension(f.first + itics, this->dimension_offset, this->dimension_bit_index);
+      crossfilter->set_bit_for_dimension(f.first+insert_point, this->dimension_offset, this->dimension_bit_index);
+
   }
   new_data_size = l; //(isIterable) ? l : new_data_size;
-
+  //  if(logger)   logger->info("dimension_iter _add filter");
   if (values.empty()) {
     values = new_values;
     indexes = new_indexes;
@@ -234,7 +237,7 @@ dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, d
   std::size_t i2 = 0;
   auto nvs = new_values.size();
   auto ovs = old_values.size();
-
+  //  if(logger)   logger->info("dimension_iter _add prepare merge");
   for (; i1 < ovs && i2 < nvs; ++index5) {
     if (new_values[i2] < old_values[i1]) {
       values[index5] = new_values[i2];
@@ -259,10 +262,12 @@ dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, d
     values[index5] = new_values[i2];
     indexes[index5] = new_indexes[i2];
   }
+  //  if(logger)   logger->info("dimension_iter _add prepare merge done");
   // Bisect again to recompute low and high.
   bounds = refilter(values);
   low = std::get<0>(bounds);
   high = std::get<1>(bounds);
+  //  if(logger)   logger->info("dimension _add prepare refilter");
 }
 
 template<typename V, typename T, typename I, typename H>
@@ -270,33 +275,42 @@ template<bool Enable>
 inline
 std::enable_if_t<!dimension_impl<V,T,I,H>::isIterable && Enable>
 dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, data_iterator end) {
+  //  auto logger = spdlog::get("console");
+  //  if(logger) logger->info("dimension _add start");
+
   old_data_size = values.size();
 
   std::size_t new_data_size = std::distance(begin, end);
+  new_indexes.clear();
+  new_indexes.reserve(new_data_size);
 
-  new_indexes.resize(new_data_size);
   new_values.clear();
   new_values.reserve(new_indexes.size());
+  std::size_t ip = insert_point;
+  std::vector<std::pair<std::size_t,value_type_t>> new_values2;
+  new_values.reserve(new_indexes.size());
+  for(auto p = begin; p != end; ++p,++ip) {
+    new_values2.push_back(std::make_pair(ip,getter(*p)));
+  }
 
-  std::iota(new_indexes.begin(), new_indexes.end(), insert_point);
-
+  //  if(logger)   logger->info("dimension _add prepare");
 
 #ifndef USE_STD_SORT
-  auto vs = insert_point;//values.size();
-  DualPivotsort2::quicksort<std::size_t, value_type_t>(new_indexes, 0, new_indexes.size(),
-                                                       [&begin, &vs, this](auto r) { return getter(*(begin + r - vs));});
+  DualPivotsort2::quicksort<std::pair<std::size_t,value_type_t>, value_type_t>(new_values2, 0, new_values2.size(),
+                                                       [](auto & r) { return r.second;});
+
 #else
-  auto vs = values.size();
-  std::sort(new_indexes.begin(), new_indexes.end(),
-            [begin, this, vs](auto lhs, auto rhs) {
-              return getter(*(begin + lhs - values.size())) < getter(*(begin + rhs - vs));
+  std::sort(new_values2.begin(), new_values2.end(),
+            [](auto & lhs, auto& rhs) {
+              return lhs.second < rhs.second;
             });
 #endif
-
-  for (auto &i : new_indexes) {
-    //    new_values.push_back(getter(*(begin + i - values.size())));
-    new_values.push_back(getter(*(begin + i - insert_point)));
+  //  if(logger)   logger->info("dimension _add sort {}", new_values2.size());
+  for (auto &i : new_values2) {
+    new_values.push_back(i.second);
+    new_indexes.push_back(i.first);
   }
+  //  if(logger)   logger->info("dimension add refilter");
   auto bounds = refilter(new_values);
   auto lo1 = std::get<0>(bounds);
   auto hi1 = std::get<1>(bounds);
@@ -315,7 +329,7 @@ dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, d
       crossfilter->set_bit_for_dimension(new_indexes[i], this->dimension_offset, this->dimension_bit_index);
     }
   }
-
+  //  if(logger)   logger->info("dimension _add filter");
   if (values.empty()) {
     values = new_values;
     indexes = new_indexes;
@@ -336,7 +350,7 @@ dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, d
   std::size_t i2 = 0;
   auto ovs = old_values.size();
   auto nvs = new_values.size();
-  
+  //  if(logger)   logger->info("dimension _add prepare merge");
 
   for (; i1 < ovs && i2 < nvs; ++index5) {
     if (new_values[i2] < old_values[i1]) {
@@ -354,17 +368,18 @@ dimension_impl<V, T, I, H>::add(std::size_t insert_point, data_iterator begin, d
     values[index5] = old_values[i1];
     auto oi = old_indexes[i1];
     indexes[index5] = (oi >= insert_point) ? oi + new_data_size : oi;
-    //    indexes[index5] = old_indexes[i1];
   }
 
   for (; i2 < nvs; i2++, index5++) {
     values[index5] = new_values[i2];
     indexes[index5] = new_indexes[i2];
   }
+  //  if(logger)   logger->info("dimension _add prepare merge done");
   // Bisect again to recompute low and high.
   bounds = refilter(values);
   low = std::get<0>(bounds);
   high = std::get<1>(bounds);
+  //  if(logger)   logger->info("dimension _add prepare refilter");
 }
 
 template<typename V, typename T, typename I, typename H>
@@ -498,11 +513,11 @@ dimension_impl<V, T, I, H>::do_filter(std::size_t filter_low_index, std::size_t 
     refilter_function_flag = false;
     for(std::size_t i = 0; i < indexes.size(); i++) {
       if(i >= filter_low_index && i < filter_high_index) {
-        if(crossfilter->get_bit_for_dimension(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
+        if(crossfilter->get_bit_for_dimension_st(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
           filter_status_added[indexes[i]] += 1;
         }
       } else {
-        if(!crossfilter->get_bit_for_dimension(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
+        if(!crossfilter->get_bit_for_dimension_st(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
           filter_status_removed[indexes[i]] += 1;
         }
       }
@@ -514,7 +529,7 @@ dimension_impl<V, T, I, H>::do_filter(std::size_t filter_low_index, std::size_t 
         auto ind = indexes[i];
         auto & status = filter_status_added[ind];
         if(status == 0)  {
-          if(crossfilter->get_bit_for_dimension(ind,this->dimension_offset, this->dimension_bit_index)) {
+          if(crossfilter->get_bit_for_dimension_st(ind,this->dimension_offset, this->dimension_bit_index)) {
             status += 1;
           }
         } else {
@@ -533,7 +548,7 @@ dimension_impl<V, T, I, H>::do_filter(std::size_t filter_low_index, std::size_t 
         auto ind = indexes[i];
         auto & status = filter_status_added[ind];
         if(status == 0)  {
-          if(crossfilter->get_bit_for_dimension(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
+          if(crossfilter->get_bit_for_dimension_st(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
             status += 1;
           }
         } else {
@@ -548,12 +563,12 @@ dimension_impl<V, T, I, H>::do_filter(std::size_t filter_low_index, std::size_t 
   }
   if(filter_low_index == 0 && filter_high_index == values.size()) {
     for(auto i : iterables_empty_rows) {
-      if(crossfilter->get_bit_for_dimension(i,this->dimension_offset,this->dimension_bit_index))
+      if(crossfilter->get_bit_for_dimension_st(i,this->dimension_offset,this->dimension_bit_index))
         filter_status_added[i] = 0;
     }
   } else {
     for(auto i : iterables_empty_rows) {
-      if(!crossfilter->get_bit_for_dimension(i,this->dimension_offset,this->dimension_bit_index))
+      if(!crossfilter->get_bit_for_dimension_st(i,this->dimension_offset,this->dimension_bit_index))
         filter_status_removed[i] = 0;
     }
   }
@@ -561,7 +576,7 @@ dimension_impl<V, T, I, H>::do_filter(std::size_t filter_low_index, std::size_t 
   removed.reserve(filter_status_removed.size()/2);
   for(auto f : filter_status_added) {
     if(!isIterable || f.second == iterables_index_count[f.first]) {
-      crossfilter->reset_bit_for_dimension(f.first,this->dimension_offset,this->dimension_bit_index);
+      crossfilter->reset_bit_for_dimension_st(f.first,this->dimension_offset,this->dimension_bit_index);
       added.push_back(f.first);
     }
   }
@@ -569,22 +584,21 @@ dimension_impl<V, T, I, H>::do_filter(std::size_t filter_low_index, std::size_t 
   for(auto f : filter_status_removed) {
     if(!isIterable || f.second == iterables_index_count[f.first]) {
       removed.push_back(f.first);
-      crossfilter->set_bit_for_dimension(f.first,this->dimension_offset,this->dimension_bit_index);
+      crossfilter->set_bit_for_dimension_st(f.first,this->dimension_offset,this->dimension_bit_index);
     }
   }
 
   low = filter_low_index;
   high = filter_high_index;
   crossfilter->emit_filter_signal(this->dimension_offset, this->dimension_bit_index, added, removed);
-  crossfilter->trigger_on_change("filtered");
-  
 }
+
 template<typename V, typename T, typename I, typename H>
 inline void dimension_impl<V, T, I, H>::filter1(std::vector<std::size_t> & added, std::vector<std::size_t>& removed, std::size_t filter_low_index, std::size_t filter_high_index) {
   if (filter_low_index < low) {
     for (auto i = filter_low_index; i < std::min(low, filter_high_index); ++i) {
       auto ind = indexes[i];
-      if(crossfilter->get_bit_for_dimension(ind,this->dimension_offset, this->dimension_bit_index)) {
+      if(crossfilter->get_bit_for_dimension_st(ind,this->dimension_offset, this->dimension_bit_index)) {
         added.push_back(ind);
       }
     }
@@ -600,7 +614,7 @@ inline void dimension_impl<V, T, I, H>::filter2(std::vector<std::size_t> & added
   if (filter_high_index > high) {
     for (auto i = std::max(filter_low_index, high); i < filter_high_index; ++i) {
       auto ind = indexes[i];
-      if(crossfilter->get_bit_for_dimension(ind,this->dimension_offset, this->dimension_bit_index)) {
+      if(crossfilter->get_bit_for_dimension_st(ind,this->dimension_offset, this->dimension_bit_index)) {
         added.push_back(ind);
       }
     }
@@ -619,41 +633,49 @@ std::enable_if_t<!dimension_impl<V,T,I,H>::isIterable && Enable>
 dimension_impl<V, T, I, H>::do_filter(std::size_t filter_low_index, std::size_t filter_high_index) {
   // std::vector<std::size_t> added;
   // std::vector<std::size_t> removed;
+  // auto logger = spdlog::get("console");
+  // logger->info("do_filter_start");
+
   added.clear();
   removed.clear();
-  
+
   added.reserve(indexes.size()/2);
   removed.reserve(indexes.size()/2);
+
+  //  logger->info("do_filter_prepare");
+
   if(refilter_function_flag) {
     // reset previous filter
     refilter_function_flag = false;
     for(std::size_t i = 0; i < indexes.size(); i++) {
       if(i >= filter_low_index && i < filter_high_index) {
-        if(crossfilter->get_bit_for_dimension(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
+        if(crossfilter->get_bit_for_dimension_st(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
           added.push_back(indexes[i]);
         }
       } else {
-        if(!crossfilter->get_bit_for_dimension(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
+        if(!crossfilter->get_bit_for_dimension_st(indexes[i],this->dimension_offset, this->dimension_bit_index)) {
           removed.push_back(indexes[i]);
         }
       }
     }
   } else {
     filter1(added,removed,filter_low_index, filter_high_index);
+    //    logger->info("do_filter_filter1");
     filter2(added,removed,filter_low_index, filter_high_index);
+    //    logger->info("do_filter_filter2");
   }
   for(auto f : added) {
-    crossfilter->reset_bit_for_dimension(f,this->dimension_offset,this->dimension_bit_index);
+    crossfilter->reset_bit_for_dimension_st(f,this->dimension_offset,this->dimension_bit_index);
   }
-
+  //  logger->info("do_filter_aded");
   for(auto f : removed) {
-    crossfilter->set_bit_for_dimension(f,this->dimension_offset,this->dimension_bit_index);
+    crossfilter->set_bit_for_dimension_st(f,this->dimension_offset,this->dimension_bit_index);
   }
-
+  //  logger->info("do_filter_removed");
   low = filter_low_index;
   high = filter_high_index;
   crossfilter->emit_filter_signal(this->dimension_offset, this->dimension_bit_index, added, removed);
-  crossfilter->trigger_on_change("filtered");
+  //  logger->info("do_filter_emit_signal");
 }
 
 
@@ -661,6 +683,7 @@ template<typename V, typename T, typename I, typename H>
 inline
 void  dimension_impl<V, T, I, H>::filter_range(const value_type_t & left, const value_type_t &right) {
   //  refilterFunctionFlag = false;
+  //  spdlog::get("console")->info("filter_range");
   refilter = [left, right, this](const std::vector<value_type_t> &val) {
                return this->refilter_range(left, right, val);
              };
@@ -772,7 +795,7 @@ void  dimension_impl<V, T, I, H>::filter_with_predicate(
     crossfilter->emit_filter_signal(this->dimension_offset, this->dimension_bit_index, added, removed);
 
   }
-  crossfilter->trigger_on_change("filtered");
+  //  crossfilter->trigger_on_change("filtered");
 }
 
 template<typename V, typename T, typename I, typename H>

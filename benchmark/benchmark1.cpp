@@ -5,6 +5,11 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/gregorian/greg_date.hpp>
 #include "crossfilter.hpp"
+// #include "spdlog/spdlog.h"
+// #include "spdlog/async.h"
+// #include "spdlog/sinks/stdout_sinks.h"
+// #include "spdlog/sinks/basic_file_sink.h"
+// #include "spdlog/sinks/daily_file_sink.h"
 
 struct Payment {
   Payment(const uint64_t & d, double a)
@@ -109,7 +114,11 @@ int main() {
   double v2[] = {0, 0, 0, 0, 0, 0, 0, .2, .5, .7, .85, .9, .8, .69, .72, .8, .78, .7, .3, 0, 0, 0, 0, 0};
   std::random_device rd;
   std::mt19937 gen(rd());
-  
+
+  //  auto logger = spdlog::daily_logger_mt<spdlog::async_factory>("console", "thread_log.txt",10,0);
+  //  logger->flush_on(spdlog::level::info);
+  //  spdlog::set_pattern("[%H:%M:%S.%f] [%t]: %v");
+
   RandomIndex randomDayOfWeek(std::begin(v1), std::end(v1));
   RandomIndex  randomHourOfDay(std::begin(v2), std::end(v2));
   auto randomDate  = randomRecentDate(randomDayOfWeek, randomHourOfDay, 13);
@@ -158,19 +167,19 @@ int main() {
                                  });
    auto hours = hour.feature_count();
 
-  std::cout << "Indexing " << firstSize << " records: " << (mtime() - then) << "ms." << std::endl;
+  std::cout << "Indexing " << firstSize << " records: " << (mtime() - then) << " ms." << std::endl;
   auto then3 = mtime();
   payments.add(secondBatch);
 
-  std::cout << "Indexing " << secondSize << " records: " << (mtime() - then3) << "ms." << std::endl;
-  std::cout << "Total indexing time: " << (mtime() - then) << "ms." << std::endl;
+  std::cout << "Indexing " << secondSize << " records: " << (mtime() - then3) << " ms." << std::endl;
+  std::cout << "Total indexing time: " << (mtime() - then) << " ms." << std::endl;
 
    std::cout << "dates.size()=" << dates.size() << std::endl;
   std::cout << "days.size()=" << days.size() << std::endl;
   std::cout << "hours.size()=" << hours.size() << std::endl;
   std::cout << "amounts.size()=" << amounts.size() << std::endl;
   then = mtime();
-    auto today = boost::posix_time::second_clock::local_time();
+  auto today = boost::posix_time::second_clock::local_time();
   int k = 0;
 
   for(int i = 0; i < 90; ++i) {
@@ -188,11 +197,12 @@ int main() {
     }
 
   }
-  std::cout << "Filtering by date: " << ((mtime() - then) / double(k)) << "ms/op." << std::endl;
+  std::cout << "Filtering by date: " << ((mtime() - then) / double(k)) << " ms/op." << std::endl;
   date.filter_all();
 
   then = mtime();
   k = 0;
+
   //  for(int l = 0; l < 100; l++) {
   for(int i = 0; i < 7; i++) {
     for(int j = i; j < 7; j++) {
@@ -208,7 +218,7 @@ int main() {
   }
   //  }
   
-  std::cout << "Filtering by day: " << ((mtime() - then) / double(k)) << "ms/op." << std::endl;
+  std::cout << "Filtering by day: " << ((mtime() - then) / double(k)) << " ms/op." << std::endl;
   day.filter_all();
 
   then = mtime();
@@ -226,7 +236,7 @@ int main() {
       date.top(40);
     }
   }
-  std::cout << "Filtering by hour: " << ((mtime() - then) / double(k)) << "ms/op." << std::endl;
+  std::cout << "Filtering by hour: " << ((mtime() - then) / double(k)) << " ms/op." << std::endl;
   hour.filter_all();
 
   then = mtime();
@@ -243,7 +253,7 @@ int main() {
       date.top(40);
     }
   }
-  std::cout << "Filtering by amount: " << ((mtime() - then) / double(k)) << "ms/op." << std::endl;
+  std::cout << "Filtering by amount: " << ((mtime() - then) / double(k)) << " ms/op." << std::endl;
   amount.filter_all();
 
   then = mtime();
@@ -252,7 +262,7 @@ int main() {
                     return i%10 == 1;
                   });
 
-  std::cout << "Removing  " << totalSize/10 << " records: " <<  (mtime() - then) << "ms." << std::endl;
+  std::cout << "Removing  " << totalSize/10 << " records: " <<  (mtime() - then) << " ms." << std::endl;
 
   std::cout << std::endl;
   std::cout << "Day of Week:" << std::endl;

@@ -81,17 +81,16 @@ void feature_impl<Key, Reduce, Dimension, is_group_all>::update_one(std::size_t 
                                                                           const std::vector<std::size_t> &added,
                                                                           const std::vector<std::size_t> &removed,
                                                                           bool not_filter) {
+
   if ((filter_bit_index > 0 && dimension->dimension_offset == filter_offset &&
        dimension->dimension_bit_index == filter_bit_index) ||
       reset_needed)
     return;
-
   std::for_each(added.begin(), added.end(),
                 [this](auto i) {
                   if(dimension->zero_except(i))
                     groups[0].second = add_func(groups[0].second,dimension->get_raw(i),false);
                 });
-
   std::for_each(removed.begin(), removed.end(),
                 [this, filter_offset, filter_bit_index, not_filter] (auto i) {
                   if(filter_bit_index < 0) {
@@ -253,6 +252,30 @@ feature_impl<Key, Reduce, Dimension, is_group_all>::top(std::size_t k) noexcept 
   auto &t = all();
   auto top = select_func(t, 0, groups.size(), k);
   return sort_func(top, 0, top.size());
+}
+
+template <typename Key, typename Reduce, typename Dimension,
+          bool is_group_all>
+template<typename OrderFunc>
+inline
+std::vector<typename feature_impl<Key, Reduce, Dimension, is_group_all>::group_type_t>
+feature_impl<Key, Reduce, Dimension, is_group_all>::top(std::size_t k, OrderFunc value) noexcept {
+  auto &t = all();
+  using T = typename std::decay< decltype(value(std::declval<reduce_type_t>())) >::type;
+  auto select = std::bind(Heap<group_type_t, T>::select,
+                          std::placeholders::_1,
+                          std::placeholders::_2,
+                          std::placeholders::_3,
+                          std::placeholders::_4,
+                          [&value](const group_type_t& g) { return value(g.second);});
+
+  auto sort = std::bind(Heap<group_type_t, T>::sort, std::placeholders::_1,
+                        std::placeholders::_2,
+                        std::placeholders::_3,
+                        [&value](const group_type_t& g) { return value(g.second);});
+
+  auto top = select(t, 0, groups.size(), k);
+  return sort(top, 0, top.size());
 }
 
 template <typename Key, typename Reduce, typename Dimension,

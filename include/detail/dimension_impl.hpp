@@ -10,8 +10,10 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <functional>
 #include <utility>
 #include <tuple>
+#include <type_traits>
 #include "detail/crossfilter_impl.hpp"
 #include "detail/utils.hpp"
+#include "detail/thread_policy.hpp"
 
 namespace cross {
 template <typename, typename, typename, typename> struct dimension;
@@ -20,12 +22,11 @@ template <typename, typename, typename, bool> struct feature;
 namespace impl {
 
 
-template<typename T, typename H> struct filter_impl;
+template<typename, typename> struct filter_impl;
 
 template <typename V, typename T, typename I,  typename H> struct dimension_impl  {
   static constexpr bool isIterable = std::is_same<I,cross::iterable>::value;
   using value_type_t = typename trait::cond_type<V, isIterable>::type;
-  //  using parent_type_t = filter_dim_base<T>;
   using field_type_t = V;
   using record_type_t = T;
   using this_type_t = cross::dimension<V, T, I, H>;
@@ -141,7 +142,13 @@ template <typename V, typename T, typename I,  typename H> struct dimension_impl
   do_filter(std::size_t filter_low_index, std::size_t filter_high_index);
 
  public:
-  dimension_impl() {}
+  ~dimension_impl() {
+    //spdlog::get("console")->info("~dimension_impl() = {:x} , {:x}", (uint64_t)add_signal.signal.get(), (uint64_t)this);
+  }
+
+  dimension_impl() {
+    //spdlog::get("console")->info("dimension_impl()  {:x}", (uint64_t)this);
+  }
 
   dimension_impl(cross::impl::filter_impl<T,H> *cf, std::size_t offset, int bit_num,
             std::function<field_type_t(const record_type_t &)> getter_);
@@ -155,7 +162,8 @@ template <typename V, typename T, typename I,  typename H> struct dimension_impl
         getter(dim.getter), refilter_function_flag(dim.refilter_function_flag),
         remove_signal(std::move(dim.remove_signal)),
         dispose_dimension_signal(std::move(dim.dispose_dimension_signal)),
-        add_signal(std::move(dim.add_signal))  {
+        add_signal(std::move(dim.add_signal))
+  {
     slot_add =  [this](std::size_t index, data_iterator begin, data_iterator end) {
                   this->add(index, begin, end); };
 
@@ -174,9 +182,13 @@ template <typename V, typename T, typename I,  typename H> struct dimension_impl
     connection_add = crossfilter->connect_add_slot(slot_add);
     dim.connection_remove.disconnect();
     connection_remove = crossfilter->connect_remove_slot(slot_remove);
+    dim.connection_post_add.disconnect();
+    connection_post_add = crossfilter->connect_post_add_slot(slot_post_add);
+    //spdlog::get("console")->info("dimension(dim &&) = {:x}, {:x}, {:x}" , (uint64_t)add_signal.signal.get(),(uint64_t)this, (uint64_t)(&dim));
   }
 
   dimension_impl & operator = (dimension_impl<V, T, I, H> && dim) {
+    //    spdlog::get("console")->info("operator_impl=(&&)  {:x},{:x}", (uint64_t)this, (uint64_t)(&dim));
     values = std::move(dim.values);
     indexes = std::move(dim.indexes);
     crossfilter = std::move(dim.crossfilter);
@@ -191,9 +203,9 @@ template <typename V, typename T, typename I,  typename H> struct dimension_impl
     refilter_function_flag = dim.refilter_function_flag;
     remove_signal = std::move(dim.remove_signal);
     dispose_dimension_signal = std::move(dim.dispose_dimension_signal);
-    add_signal = std::move(dim.add_signal);
-    slot_add =  [this](std::size_t index, data_iterator begin, data_iterator end) {
-                  this->add(index, begin, end); };
+    //    add_signal = std::move(dim.add_signal);
+    // slot_add =  [this](std::size_t index, data_iterator begin, data_iterator end) {
+    //               this->add(index, begin, end); };
     slot_remove = [this] (const std::vector<int64_t> &reindex) {
       this->remove_data(reindex);
     };
@@ -207,15 +219,21 @@ template <typename V, typename T, typename I,  typename H> struct dimension_impl
 
     connection_add.disconnect();
     dim.connection_add.disconnect();
-    connection_add = crossfilter->connect_add_slot(slot_add);
+    connection_add = crossfilter->connect_add_slot([this](std::size_t index, data_iterator begin, data_iterator end) {
+                                                     this->add(index, begin, end); });
 
     dim.connection_remove.disconnect();
     connection_remove.disconnect();
     connection_remove = crossfilter->connect_remove_slot(slot_remove);
     dim.connection_post_add.disconnect();
     connection_post_add.disconnect();
-    connection_post_add = crossfilter->connect_post_add_slot(slot_post_add);
-
+    connection_post_add = crossfilter->connect_post_add_slot(
+        [this](std::size_t new_data_size) {
+          //    spdlog::get("console")->info("dim() pos_add = {:x}",(uint64_t)add_signal.signal.get());
+          add_signal(new_values, new_indexes, old_data_size, new_data_size);
+          new_values.clear();
+        });
+    //    spdlog::get("console")->info("operator = (dim &&) = {:x}" , (uint64_t)add_signal.signal.get());
     return *this;
   }
 
@@ -243,27 +261,29 @@ template <typename V, typename T, typename I,  typename H> struct dimension_impl
           std::function<R(R &, const record_type_t &, bool)> add_func_,
           std::function<R(R &, const record_type_t &, bool)> remove_func_,
           std::function<R()> initial_func_) noexcept -> cross::feature<K, R, this_type_t, false>;
-  
+
   template <typename AddFunc, typename RemoveFunc, typename InitialFunc>
-  auto 
+  auto
   feature_all(
       cross::dimension<V,T,I,H> * base,
       AddFunc add_func_,
       RemoveFunc remove_func_,
       InitialFunc initial_func_) noexcept  ->  cross::feature<std::size_t, decltype(initial_func_()), this_type_t, true>;
-  
+
   std::size_t translate_index(std::size_t index) const noexcept{
-      return indexes[index];
+    return indexes[index];
   }
   const T & get_raw(std::size_t index) const noexcept {
     return crossfilter->get_raw(index);
   }
 
-//  static constexpr  bool get_is_iterable() {
-//    return isIterable;
-//  }
   void filter1(std::vector<std::size_t> & added, std::vector<std::size_t>& removed, std::size_t filterLowIndex, std::size_t filterHighIndex);
   void filter2(std::vector<std::size_t> & added, std::vector<std::size_t>& removed, std::size_t filterLowIndex, std::size_t filterHighIndex);
+
+  cross::thread_policy::mutex_type & lock() {
+    return crossfilter->lock();
+  }
+
 };
 } //namespace impl
 } //namespace cross
