@@ -1627,10 +1627,10 @@ BOOST_AUTO_TEST_SUITE_END();
 BOOST_AUTO_TEST_SUITE(on_change)
 BOOST_AUTO_TEST_CASE(sends_the_eventName_with_the_callback) {
   cross::filter<int> data;
-  std::string name;
+  cross::event name;
   data.onChange([&name](auto eventName) {name = eventName;});
   data.add(1);
-  BOOST_CHECK_EQUAL(name,std::string("dataAdded"));
+  BOOST_CHECK_EQUAL(name,cross::dataAdded);
 }
 BOOST_AUTO_TEST_CASE(callback_gets_called_when_removing_all_data) {
   Fixture data;

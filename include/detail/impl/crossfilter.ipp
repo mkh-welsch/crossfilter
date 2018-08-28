@@ -5,6 +5,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Copyright (c) 2018 Dmitry Vinokurov */
 
 #include "crossfilter.hpp"
+//#include "spdlog/spdlog.h"
 namespace cross {
 
 template<typename T, typename H>
@@ -12,35 +13,58 @@ template<typename C>
 inline
 typename std::enable_if<!std::is_same<C, T>::value, filter<T,H>&>::type
 filter<T,H>::add(const C &new_data, bool allow_duplicates) {
-  impl_type_t::add(new_data, allow_duplicates);
+  //  auto logger = spdlog::get("console");
+  {
+    writer_lock_t lk(mutex);
+    //    if(logger) logger->info("dataAdded_pre");
+    impl_type_t::add(new_data, allow_duplicates);
+  }
+  //  if(logger) logger->info("dataAdded_post");
+  on_change_signal(cross::dataAdded);
   return *this;
 }
 
 template<typename T, typename H>
 inline
 filter<T,H> & filter<T,H>::add(const T &new_data, bool allow_duplicates) {
-  impl_type_t::add(size(),new_data, allow_duplicates);
+  //  auto logger = spdlog::get("console");
+  {
+    writer_lock_t lk(mutex);
+    //    if(logger) logger->info("dataAdded_pre");
+    impl_type_t::add(impl_type_t::size(),new_data, allow_duplicates);
+  }
+  //  if(logger) logger->info("dataAdded_post");
+  on_change_signal(cross::dataAdded);
   return *this;
 }
 
 template<typename T, typename H>
 inline
-std::size_t filter<T,H>::size() const { return impl_type_t::size(); }
-
-
+std::size_t filter<T,H>::size() const {
+  reader_lock_t lk(mutex);
+  return impl_type_t::size();
+}
 
 // removes all records matching the predicate (ignoring filters).
 template<typename T, typename H>
 inline
 void filter<T,H>::remove(std::function<bool(const T&, int)> predicate) {
-  impl_type_t::remove(predicate);
+  {
+    writer_lock_t lk(mutex);
+    impl_type_t::remove(predicate);
+  }
+  on_change_signal(cross::dataRemoved);
 }
 
 // Removes all records that match the current filters
 template<typename T, typename H>
 inline
 void filter<T,H>::remove() {
-  impl_type_t::remove();
+  {
+    writer_lock_t lk(mutex);
+    impl_type_t::remove();
+  }
+  on_change_signal(cross::dataRemoved);
 }
 
 template<typename T, typename H>
@@ -52,6 +76,7 @@ filter<T,H>::feature(
     RemoveFunc remove_func_,
     InitialFunc initial_func_) -> cross::feature<std::size_t,
                                         decltype(initial_func_()), this_type_t, true> {
+  reader_lock_t lk(mutex);
   return impl_type_t::feature(this, add_func_, remove_func_, initial_func_);
 }
 

@@ -12,6 +12,11 @@
 
 namespace cross {
 
+enum event {
+  dataAdded,
+  dataRemoved,
+  dataFiltered
+};
 struct iterable {};
 struct non_iterable {};
 

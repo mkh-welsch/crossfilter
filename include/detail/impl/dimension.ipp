@@ -5,7 +5,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Copyright (c) 2018 Dmitry Vinokurov */
 
 #include <numeric>
-#include "detail/dimension.hpp"
+//#include "detail/dimension.hpp"
 namespace cross {
 
 template<typename V, typename T, typename I, typename H>
@@ -26,37 +26,58 @@ void  dimension<V, T, I, H>::dispose() {
 template<typename V, typename T, typename I, typename H>
 inline
 void  dimension<V, T, I, H>::filter_range(const value_type_t & left, const value_type_t & right) {
-  impl::dimension_impl<V, T, I, H>::filter_range(left, right);
+  {
+    writer_lock_t lk(crossfilter->lock());
+    impl::dimension_impl<V, T, I, H>::filter_range(left, right);
+  }
+  crossfilter->trigger_on_change(cross::dataFiltered);
 }
 
 template<typename V, typename T, typename I, typename H>
 inline
 void  dimension<V, T, I, H>::filter_exact(const value_type_t & value) {
-  impl::dimension_impl<V, T, I, H>::filter_exact(value);
+  {
+    writer_lock_t lk(crossfilter->lock());
+    impl::dimension_impl<V, T, I, H>::filter_exact(value);
+  }
+  crossfilter->trigger_on_change(cross::dataFiltered);
 }
 
 template<typename V, typename T, typename I, typename H>
 inline
 void  dimension<V, T, I, H>::filter_all() {
-  impl::dimension_impl<V, T, I, H>::filter_all();
+  {
+    writer_lock_t lk(crossfilter->lock());
+    impl::dimension_impl<V, T, I, H>::filter_all();
+  }
+  crossfilter->trigger_on_change(cross::dataFiltered);
 }
 
 template<typename V, typename T, typename I, typename H>
 inline
 void
 dimension<V, T, I, H>::filter_with_predicate(std::function<bool(const value_type_t&)> filter_function) {
-  impl::dimension_impl<V, T, I, H>::filter_with_predicate(filter_function);
+  {
+    writer_lock_t lk(crossfilter->lock());
+    impl::dimension_impl<V, T, I, H>::filter_with_predicate(filter_function);
+  }
+  crossfilter->trigger_on_change(cross::dataFiltered);
 }
 template<typename V, typename T, typename I, typename H>
 inline
 void  dimension<V, T, I, H>::filter_function(std::function<bool(const value_type_t&)> predicate) {
-  impl::dimension_impl<V, T, I, H>::filter_with_predicate(predicate);
+  {
+    writer_lock_t lk(crossfilter->lock());
+    impl::dimension_impl<V, T, I, H>::filter_with_predicate(predicate);
+  }
+  crossfilter->trigger_on_change(cross::dataFiltered);
 }
 
 template<typename V, typename T, typename I, typename H>
 inline
 auto
 dimension<V, T, I, H>::bottom(int64_t k, int64_t bottom_offset) const noexcept -> std::vector<record_type_t> {
+  reader_lock_t lk(crossfilter->lock());
   return impl::dimension_impl<V, T, I, H>::bottom(k, bottom_offset);
 }
 
@@ -64,6 +85,7 @@ template<typename V, typename T, typename I, typename H>
 inline
 std::vector<typename dimension<V, T, I, H>::record_type_t>
 dimension<V, T, I, H>::top(int64_t k, int64_t top_offset) const noexcept {
+  reader_lock_t lk(crossfilter->lock());
   return impl::dimension_impl<V, T, I, H>::top(k, top_offset);
 }
 
@@ -76,6 +98,7 @@ auto dimension<V, T, I, H>::feature(
     InitialFunc initial_func_,
     KeyFunc key) noexcept -> cross::feature<decltype(key(std::declval<value_type_t>())),
                           decltype(initial_func_()), this_type_t, false> {
+  reader_lock_t lk(crossfilter->lock());
   using K = decltype(key(std::declval<value_type_t>()));
   using R = decltype(initial_func_());
   return impl::dimension_impl<V, T, I, H>::template feature<K, R>(this,key, add_func_, remove_func_, initial_func_);
@@ -133,6 +156,7 @@ dimension<V, T, I, H>::feature_all(
     AddFunc add_func_,
     RemoveFunc remove_func_,
     InitialFunc initial_func_)  noexcept -> cross::feature<std::size_t, decltype(initial_func_()), this_type_t, true> {
+  reader_lock_t lk(crossfilter->lock());
   return impl::dimension_impl<V, T, I, H>::template feature_all(this, add_func_, remove_func_, initial_func_);
 }
 

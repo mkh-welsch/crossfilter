@@ -10,15 +10,15 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <functional>
 #include <utility>
 #include <tuple>
+#include <type_traits>
 #include "detail/dimension_impl.hpp"
 #include "detail/utils.hpp"
 #include "detail/feature_impl.hpp"
+#include "detail/thread_policy.hpp"
+#include "detail/crossfilter.hpp"
 
 namespace cross {
 template <typename, typename, typename, bool> struct feature;
-
-//template <typename, typename, typename, bool> struct cross::impl::feature_impl;
-
 
 template <typename V, typename T, typename I = cross::non_iterable, typename H = cross::trivial_hash<T> >
 struct  dimension : private impl::dimension_impl<V, T, I, H> {
@@ -31,10 +31,13 @@ struct  dimension : private impl::dimension_impl<V, T, I, H> {
   using data_iterator = typename impl::dimension_impl<V,T,I,H>::data_iterator;
   using connection_type_t = typename impl::dimension_impl<V,T,I,H>::connection_type_t;
   template<typename F> using signal_type_t = typename impl::dimension_impl<V,T,I,H>::template signal_type_t<F>;
+  using reader_lock_t = cross::thread_policy::read_lock_t;
+  using writer_lock_t = cross::thread_policy::write_lock_t;
+  using impl::dimension_impl<V,T,I,H>::crossfilter;
 
   template <typename A, typename B> friend struct impl::filter_impl;
   template <typename, typename, typename, bool> friend struct cross::impl::feature_impl;
-
+  
   static constexpr  bool get_is_iterable() {
     return isIterable;
   }
@@ -60,7 +63,6 @@ struct  dimension : private impl::dimension_impl<V, T, I, H> {
     impl::dimension_impl<V, T, I, H>::operator=(std::move(dim));
     return *this;
   }
-
 
   void dispose();
 
