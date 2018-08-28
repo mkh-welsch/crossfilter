@@ -11,6 +11,7 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <unordered_map>
 #include <utility>
 #include <type_traits>
+#include <map>
 #include "detail/heap.hpp"
 #include "detail/impl/group_index.hpp"
 #include "detail/crossfilter_impl.hpp"
@@ -131,6 +132,9 @@ struct feature_impl {
 
   std::vector<group_type_t> top(std::size_t k) noexcept;
 
+  template<typename OrderFunc>
+  std::vector<group_type_t> top(std::size_t k, OrderFunc value) noexcept;
+
   void reset_one();
 
   void reset();
@@ -143,7 +147,9 @@ struct feature_impl {
   feature_impl<Key, Reduce, Dimension, isGroupAll> &
   order(OrderFunc value) noexcept;
 
-  feature_impl<Key, Reduce, Dimension, isGroupAll> &order_natural() noexcept;
+  feature_impl<Key, Reduce, Dimension, isGroupAll> &order_natural() noexcept {
+    return order([](auto r) { return r;});
+  }
 
   std::size_t size() const noexcept { return groups.size(); }
   std::vector<group_type_t> & all2() {

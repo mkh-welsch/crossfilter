@@ -6,22 +6,23 @@ Copyright (c) 2018 Dmitry Vinokurov */
 
 #ifndef CROSSFILTER_IMPL_H_GUARD
 #define CROSSFILTER_IMPL_H_GUARD
+
 #include <vector>
 #include <functional>
 #include <iostream>
 #include <limits>
 #include <tuple>
+#include <type_traits>
 #include <unordered_map>
 #include "detail/signal_base.hpp"
 #include "detail/bitarray.hpp"
 #include "detail/utils.hpp"
 #include "detail/dimension.hpp"
 #include "detail/feature.hpp"
+#include "detail/thread_policy.hpp"
 
 namespace cross {
-// template <typename, typename, typename, typename> struct dimension;
-// template <typename, typename, typename, bool> struct feature;
-template <typename T, typename H> struct filter;
+template <typename, typename> struct filter;
 namespace impl {
 
 template<typename T, typename Hash> struct filter_impl {
@@ -32,7 +33,8 @@ template<typename T, typename Hash> struct filter_impl {
 
   static constexpr std::size_t dimension_offset = std::numeric_limits<std::size_t>::max();
   static constexpr int dimension_bit_index = -1;
-
+  //  mutable std::mutex mutex;
+  mutable cross::thread_policy::mutex_type mutex;
   using record_type_t = T;
   using this_type_t = filter<T,Hash>;
   using value_type_t = T;
@@ -54,7 +56,7 @@ template<typename T, typename Hash> struct filter_impl {
   signal_type_t<void()> clear_signal;
   signal_type_t<void(std::size_t)>                  post_add_signal;
   signal_type_t<void(std::size_t, data_iterator, data_iterator)> add_signal;
-  signal_type_t<void(const std::string&)>           on_change_signal;
+
 
   BitArray filters;
   std::vector<record_type_t> data;
@@ -63,15 +65,23 @@ template<typename T, typename Hash> struct filter_impl {
   std::unordered_map<uint64_t,uint64_t> hash_table;
   Hash hash;
 
-  ~filter_impl() {}
+#ifdef CROSS_FILTER_USE_THREAD_POOL
+  uint32_t thread_pool_size = 2;
+  void set_thread_pool_size(uint32_t threads) {
+    thread_pool_size = threads;
+  }
+#endif
+
+  virtual ~filter_impl() {}
   filter_impl() {}
-  
+  filter_impl(filter_impl &&) = default;
   template<typename Iterator>
   filter_impl(Iterator begin, Iterator end) {
     data.assign(begin,end);
     data_size = data.size();
     filters.resize(data_size);
   }
+
   std::vector<T> bottom(std::size_t low, std::size_t high, int64_t k,
                         int64_t offset, const index_vec_t &indexes, const index_vec_t &empty);
 
@@ -99,15 +109,11 @@ template<typename T, typename Hash> struct filter_impl {
   connect_add_slot(std::function<void(std::size_t, data_iterator, data_iterator)> slot);
 
   connection_type_t
-  on_change(std::function<void(const std::string &)> callback);
-
-  connection_type_t
   connect_clear_slot(std::function<void()> callback);
 
+  virtual
   void
-  trigger_on_change(const std::string & event_name) {
-    on_change_signal(event_name);
-  }
+  trigger_on_change(cross::event event) = 0;
 
   void
   emit_filter_signal(std::size_t filter_offset, int filter_bit_num,
@@ -199,6 +205,20 @@ template<typename T, typename Hash> struct filter_impl {
   get_bit_for_dimension(std::size_t index, std::size_t dimension_offset,
                         int dimension_bit_index);
 
+  void flip_bit_for_dimension_st(std::size_t index, std::size_t dimension_offset,
+                              int dimension_bit_index);
+
+  void
+  set_bit_for_dimension_st(std::size_t index, std::size_t dimension_offset,
+                        int dimension_bit_index);
+  void
+  reset_bit_for_dimension_st(std::size_t index, std::size_t dimension_offset,
+                          int dimension_bit_index);
+
+  bool
+  get_bit_for_dimension_st(std::size_t index, std::size_t dimension_offset,
+                        int dimension_bit_index);
+
   std::tuple<data_iterator, data_iterator>
   get_data_iterators_for_indexes(std::size_t low, std::size_t high);
 
@@ -210,10 +230,14 @@ template<typename T, typename Hash> struct filter_impl {
   typename std::enable_if<std::is_same<Hash,cross::trivial_hash<T>>::value && B, void>::type
   update_hash_on_remove(std::size_t index);
 
-  void remove_data(std::function<bool(int)> should_remove, std::size_t first, std::size_t last);
+  template<typename P>
+  void remove_data(P should_remove, std::size_t first, std::size_t last);
+  //  void remove_data(std::function<bool(int)> should_remove, std::size_t first, std::size_t last);
 
   // removes all records matching the predicate (ignoring filters).
-  void remove(std::function<bool(const T&, int)> predicate);
+  template<typename P>
+  void remove(P predicate);
+  //  void remove(std::function<bool(const T&, int)> predicate);
 
   // Removes all records that match the current filters
   void remove();
@@ -256,8 +280,6 @@ template<typename T, typename Hash> struct filter_impl {
     return filters.only(index, offset, bit_index);
   }
 
-  record_type_t & get_raw(std::size_t index) { return data[index]; }
-
   std::size_t translate_index(std::size_t index) const {
     return index;
   }
@@ -271,16 +293,13 @@ template<typename T, typename Hash> struct filter_impl {
       InitialFunc initial_func_) -> cross::feature<std::size_t,
                                                    decltype(initial_func_()), this_type_t, true>;
 
+  std::tuple<std::size_t, int> add_row_to_filters() {
+    return filters.add_row();
+  }
+  typename cross::thread_policy::mutex_type & lock() {
+    return mutex;
+  }
 
-  
-
-  // static constexpr  bool get_is_iterable() {
-  //   return false;
-  // }
-
-  // void dump() {
-  //   std::cout << "connectionNum, " << add_signal.num_slots() << std::endl;
-  // }
 };
 } //namespace impl
 } //namespace cross

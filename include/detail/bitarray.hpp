@@ -11,14 +11,18 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <tuple>
 #include <bitset>
 #include <utility>
+#include "detail/thread_policy.hpp"
 class BitArray {
   typedef std::vector<uint8_t> index_vec_t;
 
   std::vector<index_vec_t> bits;
   std::vector<uint8_t> mask;
   std::size_t indexSize = 0;
-
+  mutable cross::thread_policy::mutex_type mutex;
+  using read_lock_t = cross::thread_policy::read_lock_t;
+  using write_lock_t = cross::thread_policy::write_lock_t;
   int8_t find_first_zero_bit(int8_t value) {
+
     auto bs = std::bitset<8>(value);
     for ( std::size_t i = 0; i < bs.size(); i++ ) {
       if ( bs[i] == 0 )
@@ -36,13 +40,16 @@ class BitArray {
   }
 
   std::size_t size() const {
+    read_lock_t lk(mutex);
     return bits.size();
   }
 
   std::size_t get_index_size() const {
+    read_lock_t lk(mutex);
     return indexSize;
   }
   void resize(std::size_t newSize) {
+    write_lock_t lk(mutex);
     for (auto & v : bits) {
       if (v.size() != newSize) {
         v.resize(newSize);
@@ -51,26 +58,27 @@ class BitArray {
     indexSize = newSize;
   }
   void insert(std::size_t index, std::size_t insert_size, std::size_t new_size) {
+    write_lock_t lk(mutex);
     for (auto & v : bits) {
       if(v.empty()) {
         v.resize(new_size);
       } else  if (v.size() != new_size) {
-
-        ///        auto old_size = v.size();
-        // v.resize(new_size);
         auto p = v.begin() + index;
         p = v.insert(p,insert_size,0);
-        //        std::copy(p + insert_size, indexSize )
-        // auto pend = p + insert_size;
-        // std::copy(p,pend,pend);
-        // std::fill(p,pend,0);
       }
     }
     indexSize = new_size;
   }
-
+  void erase(std::size_t first, std::size_t last) {
+    write_lock_t lk(mutex);
+    for(auto & v : bits) {
+      v.erase(v.begin()+first, v.begin()+last);
+      indexSize = v.size();
+    }
+  }
   // return index in bits array and number of bit for coresponding mask
   std::tuple<std::size_t, int> add_row() {
+    write_lock_t lk(mutex);
     for (std::size_t i = 0; i < mask.size(); i++) {
       if (mask[i] != 255) {
         int k = find_first_zero_bit(mask[i]);
@@ -89,20 +97,24 @@ class BitArray {
     return std::make_tuple<std::size_t, int>(bits.size()-1, 0);
   }
   uint8_t get_mask(std::size_t i) {
+    read_lock_t lk(mutex);
     return mask[i];
   }
   void copy(std::size_t dst, std::size_t src) {
+    write_lock_t lk(mutex);
     for (auto & v : bits) {
       v[dst] = v[src];
     }
   }
 
   void truncate(std::size_t newSize) {
+    write_lock_t lk(mutex);
     for (auto & v : bits) {
       v.resize(newSize);
     }
   }
   bool zero(std::size_t index) {
+    //    read_lock_t lk(mutex);
     for (auto & v : bits) {
       if (v[index] != 0)
         return false;
@@ -110,6 +122,7 @@ class BitArray {
     return true;
   }
   bool only(std::size_t index, std::size_t offset, int bitIndex) {
+    //read_lock_t lk(mutex);
     auto one = std::bitset<8>(0);
     one.flip(bitIndex);
 
@@ -122,6 +135,7 @@ class BitArray {
     return true;
   }
   bool zero_except(std::size_t index, std::size_t offset, int bitIndex) {
+    //    read_lock_t lk(mutex);
     for (std::size_t i = 0; i < bits.size(); i++) {
       auto bi = bits[i][index];
       
@@ -141,6 +155,7 @@ class BitArray {
       return true;
   }
   bool zero_except_mask(std::size_t index, const std::vector<uint8_t> & mask) const {
+    //    read_lock_t lk(mutex);
     for (std::size_t i = 0; i < bits.size(); i++) {
       auto v = bits[i][index];
       if (v != 0 && (v & mask[i]) != v)
@@ -150,6 +165,7 @@ class BitArray {
   }
 
   bool only_except(std::size_t index, std::size_t offset1, int bitIndex1, std::size_t offset2, int bitIndex2) {
+    //    read_lock_t lk(mutex);
     auto zero = std::bitset<8>(0xff);
     zero.flip(bitIndex1);
     auto onlyOne = std::bitset<8>(0);
@@ -163,16 +179,22 @@ class BitArray {
     }
     return true;
   }
-  bool check(std::size_t index, std::size_t offset, int bitIndex) {
-    //    auto b = std::bitset<8>(bits[offset][index]);
-    //    return b[bitIndex];
+  bool check_st(std::size_t index, std::size_t offset, int bitIndex) const {
     return (bits[offset][index] >> bitIndex) & 1;
   }
+  bool check(std::size_t index, std::size_t offset, int bitIndex) {
+    read_lock_t lk(mutex);
+    return check_st(index, offset, bitIndex);
+  }
 
-  void flip(std::size_t index, std::size_t offset, int bitIndex) {
+  void flip_st(std::size_t index, std::size_t offset, int bitIndex) {
     auto b = std::bitset<8>(bits[offset][index]);
     b.flip(bitIndex);
     bits[offset][index] = b.to_ulong();
+  }
+  void flip(std::size_t index, std::size_t offset, int bitIndex) {
+    write_lock_t lk(mutex);
+    flip_st(index, offset, bitIndex);
   }
 
   // void set(std::size_t index, std::size_t offset, int bitIndex, bool newValue = true) {
@@ -184,12 +206,20 @@ class BitArray {
   //   else
   //     bits[offset][index] &= ~(1 << bitIndex);
   // }
-  void set(std::size_t index, std::size_t offset, int bitIndex) {
+  void set_st(std::size_t index, std::size_t offset, int bitIndex) {
     bits[offset][index] |= 1 << bitIndex;
   }
+  void set(std::size_t index, std::size_t offset, int bitIndex) {
+    write_lock_t lk(mutex);
+    return set_st(index, offset, bitIndex);
+  }
 
-  void reset(std::size_t index, std::size_t offset, int bitIndex) {
+  void reset_st(std::size_t index, std::size_t offset, int bitIndex) {
     bits[offset][index] &= ~(1 << bitIndex);
+  }
+  void reset(std::size_t index, std::size_t offset, int bitIndex) {
+    write_lock_t lk(mutex);
+    reset_st(index, offset, bitIndex);
   }
 };
 

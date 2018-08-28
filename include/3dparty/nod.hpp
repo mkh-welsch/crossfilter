@@ -10,10 +10,9 @@
 #include <thread>       // std::this_thread::yield()
 #include <type_traits>  // std::is_same
 #include <iterator>     // std::back_inserter
-
 namespace nod {
 	// implementational details
-	namespace detail {
+namespace detail {
 		/// Interface for type erasure when disconnecting slots
 		struct disconnector {
 			virtual void operator()( std::size_t index ) const = 0;
@@ -390,6 +389,16 @@ namespace nod {
 					}
 				}
 			}
+
+    template<typename Pool>
+    void emit_in_pool(Pool  pool) {
+      mutex_lock_type lock{ _mutex };
+      for( auto const& slot : _slots ) {
+        if( slot ) {
+          pool(slot);
+        }
+      }
+    }
 
 			/// Construct a accumulator proxy object for the signal.
 			///
