@@ -72,7 +72,14 @@ BOOST_AUTO_TEST_CASE(push_back) {
   f.data.push_back(r);
   BOOST_TEST(6 == f.data.size());
 }
-
+BOOST_AUTO_TEST_CASE(construct_initializer_list) {
+  cross::filter<Record2> data( {{1,2,"aaa"},
+                                {2,3,"aab"},
+                                {3,4,"aac"},
+                                {4,5,"aba"}}
+    );
+  BOOST_TEST(4 == data.size());
+}
 BOOST_AUTO_TEST_CASE(assign_to_empty_with_iterators) {
   cross::filter<Record2> data;
   Record2 input[] = {
