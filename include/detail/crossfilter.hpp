@@ -189,6 +189,12 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
   explicit filter(const C & data)
       :impl_type_t(std::begin(data), std::end(data)) {}
 
+  /**
+     Constructs the container with the contents of the initializer list 
+     \param[in] init initializer list
+  */
+
+  filter(std::initializer_list<T>  init):impl_type_t(init.begin(),init.end()) {  }
 
   #ifdef CROSS_FILTER_USE_THREAD_POOL
   /**
