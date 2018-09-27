@@ -29,6 +29,8 @@ int main()
         {"2011-11-14T17:22:59Z", 2, 90, 7, "tab", {"001", "002", "004", "005"}}};
     cross::filter<Record> payments(data);
 
+    
+
     auto totals = payments.dimension([](auto r) { return r.total; });
     totals.filter(90); // by value
     auto filtered_results1 = payments.all_filtered();

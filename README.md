@@ -3,11 +3,11 @@ cross::filter adds OLAP functionality on top of an underlying concurrent std::ve
 
 At first crossfilter is a theadsafe drop in replacement for std::vector.
 
-On top of the basic functionality of std::vector you can can define some kind of filtered views, for example the top 10 based on a multi-dimensional filter setup, which are than automatically updated (!) during usual data operations on the data. So you could build a lightweight and header only (M)OLAP in memory query database for ultra fast analysis big data sets and complex and real time filtering tasks.
+On top of the basic functionality of std::vector you can can define some kind of filtered views, for example the top 10 based on a multi-dimensional filter setup, which are than automatically updated (!) during usual data operations on the data. So you could build a lightweight and header only (M)OLAP in memory query database for ultra fast analysis of big data sets and use it for complex real time filtering tasks.
 
 ## quick instructions
 
-At first we have some abritray structures data called Record
+At first we have some common/arbitrary structured data called Record.
 
 ```C++
 struct Record
@@ -37,7 +37,7 @@ cross::filter<Record> payments = {
     {"2011-11-14T17:22:59Z", 2, 90, 7, "tab", {"001", "002", "004", "005"}}
 };
 ```
-you can use all functionalties of std::vector<> with cross::filter<>, but operations are thread safe in comparison to std::vector
+you can use all constructors and functionalties of std::vector<> with cross::filter<>, but operations are thread safe in comparison to std::vector
 
 To use the special crossfilters functionality, you have to prepare „dimensions“ on the record sets. A dimension is just a sortable column by regarding the record set as table with single entries. 
 
@@ -75,7 +75,7 @@ filtered_results = payments.all_filtered();
     // "2011-11-14T17:07:21Z", 2, 90, 6, "visa", {"004", "005"}
 ```
 
-Dimension can be a combination of different rentries as long the accessor function returs a sortable type. however, you can make type conversion on the fly.
+A dimension can be a combination of different entries as long the accessor function returs a sortable type. However, you can make type conversion on the fly.
 
 ```C++
 auto products = payments.dimension([](auto r) { return r.productIDS.size(); });
@@ -85,7 +85,7 @@ filtered_results = payments.all_filtered();
     // "2011-11-14T17:07:21Z", 2, 90, 6, "visa", {"004", "005"}
 ```
 
-If you have a not sortable type, but just are interested on specific entries a workaroud is to make them binary sortable.
+If you have a type, which is not sortable but you are just interested on specific entries you can use a workaroud to make them formal sortable.
 
 ```C++
 auto no_tabs = payments.dimension([](auto r) { return r.type != std::string("tab") ? 1 : 0; });
@@ -95,7 +95,7 @@ filtered_results = payments.all_filtered();
 
 ```
 
-Ok, that is just simple filtering, but the real power of cross::filter keep is to keep this filters updated if you add or change data to payments.
+Ok, that is just simple filtering, but the real power of cross::filter keeps track of the filters when you change, delete or edit payments.
 
 
 ```C++
@@ -107,13 +107,14 @@ filtered_results = payments.all_filtered();
 
 ## define dimensions
 
-you have to prepare a dimension for everything you want to filter with cross::filter 
+you have to prepare a dimension for everything you want to filter with cross::filter and this dimensions must be numerical sortable
 
 ```C++
-auto dim = payments.dimension([](auto r) { return r.total;});
+auto dim1 = payments.dimension([](auto r) { return r.quantity;});
+auto dim2 = payments.dimension([](auto r) { return timestamp2unixtime(r.date);});
 ```
 
-Inside cross::filter a new hashmap is build as kind of ghost copy, which keeps the totals incrementally sorted  [90,90,90,90,90,90,100,190,190,300] when changing payments or add a new or delete a record. So every dimension needs memmory space. If you don't need a dimension, remove it.
+Inside cross::filter a new indexed hashmap is build as kind of ghost copy of the data, which keeps the totals incrementally sorted  [90,90,90,90,90,90,100,190,190,300] when changing payments or add a new or delete a record. So every dimension requires additional memmory space. Keep in mind.
 
 
 
@@ -125,13 +126,13 @@ You can get a copy of all filtered data with
 filtered_results = payments.all_filtered();
 ```
 
-however, you can always get a copy of all records by not regarding the filters
+however, you can always get a copy of all records by not regarding the filter settings.
 
 ```C++
 auto all_records = filtered_results1 = payments.all();
 ```
 
-If you want only the top or the bottom ones, you can use specific methods. But in this case you have to adress payments directly, but a specic dimension, so cross::filter knows, how to order the records for you.
+If you only want the top or the bottom ones, you can use specific methods. But for this methods you can't adress payments directly, because cross::filter can't know the absolute order, if you have set multiplen filters. You have to adress a specic dimension, so cross::filter knows, how to order the filtered records for you.
 
 ```C++
 auto top_filtered1 = totals.top(2);
@@ -148,19 +149,18 @@ auto top_filtered2 = tips.bottom(3);
 ```
 
 
-
 You can set filters on three different ways.
 
 ```C++
-totals.filter(80) 							// by value
-totals.filter(90,100); 						// by range (90 <= x < 100)
-totals.filter([](auto r) { return (r.total <80); }) 	// by custom function, which returns a boolean
+totals.filter(80) 							            // by value
+totals.filter(90,100); 						            // by range (90 <= x < 100)
+totals.filter([](auto r) { return (r.total <80); }) 	// with a custom function, which returns a boolean
 ```
 
 You can reset the individual filter or change it every time
 ```C++
-no_tabs.filter();
-totals.filter(100);
+no_tabs.filter();   // reset
+totals.filter(100); // change total filter to 100
 
  filtered_results = payments.all_filtered();
     // "2011-11-14T16:54:06Z", 1, 100, 4, "cash", {"001", "002", "003", "004", "005"}
