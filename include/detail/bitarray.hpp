@@ -11,7 +11,7 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <tuple>
 #include <bitset>
 #include <utility>
-#include "detail/thread_policy.hpp"
+#include "../detail/thread_policy.hpp"
 class BitArray {
   typedef std::vector<uint8_t> index_vec_t;
 

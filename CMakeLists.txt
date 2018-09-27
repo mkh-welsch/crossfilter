@@ -13,8 +13,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
     include(CodeCoverage)
-    SET(CMAKE_CXX_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage -std=c++14 -Ofast")
-    SET(CMAKE_C_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage -std=c++14 -Ofast")
+    SET(CMAKE_CXX_FLAGS "-std=c++14 -Ofast")
+    SET(CMAKE_C_FLAGS "-std=c++14 -Ofast")
+    # SET(CMAKE_CXX_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage -std=c++14 -Ofast")
+    # SET(CMAKE_C_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage -std=c++14 -Ofast")
 
     setup_target_for_coverage(NAME ${PROJECT_NAME}_coverage EXECUTABLE ctest )
 

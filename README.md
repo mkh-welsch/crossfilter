@@ -1,5 +1,5 @@
 # crossfilter
-started as C++ port of crossfilter.js this lib will become an inmemory OLAP database.
+started as C++ port of crossfilter.js this lib will become an in-memory OLAP database.
 
 header only, C++14.
 

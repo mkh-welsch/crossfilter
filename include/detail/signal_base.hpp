@@ -9,10 +9,10 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #define USE_NOD_SIGNALS = 1
 #include <tuple>
 #include <memory>
-#include "detail/thread_policy.hpp"
+#include "../detail/thread_policy.hpp"
 
 #if defined  USE_NOD_SIGNALS
-#include "3dparty/nod.hpp"
+#include "../3dparty/nod.hpp"
 
 #ifdef CROSS_FILTER_USE_THREAD_POOL
 #define BOOST_ERROR_CODE_HEADER_ONLY

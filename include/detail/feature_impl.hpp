@@ -12,11 +12,11 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <utility>
 #include <type_traits>
 #include <map>
-#include "detail/heap.hpp"
-#include "detail/impl/group_index.hpp"
-#include "detail/crossfilter_impl.hpp"
-#include "detail/dimension_impl.hpp"
-#include "detail/utils.hpp"
+#include "../detail/heap.hpp"
+#include "../detail/impl/group_index.hpp"
+#include "../detail/crossfilter_impl.hpp"
+#include "../detail/dimension_impl.hpp"
+#include "../detail/utils.hpp"
 
 namespace cross {
 
@@ -156,7 +156,7 @@ struct feature_impl {
     return groups;
   }
 };
-#include "detail/impl/feature_impl.ipp"
+#include "../detail/impl/feature_impl.ipp"
 } //namespace impl
 } //namespace cross
 

@@ -11,11 +11,11 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <utility>
 #include <tuple>
 #include <type_traits>
-#include "detail/dimension_impl.hpp"
-#include "detail/utils.hpp"
-#include "detail/feature_impl.hpp"
-#include "detail/thread_policy.hpp"
-#include "detail/crossfilter.hpp"
+#include "../detail/dimension_impl.hpp"
+#include "../detail/utils.hpp"
+#include "../detail/feature_impl.hpp"
+#include "../detail/thread_policy.hpp"
+#include "../detail/crossfilter.hpp"
 
 namespace cross {
 template <typename, typename, typename, bool> struct feature;
@@ -219,7 +219,7 @@ struct  dimension : private impl::dimension_impl<V, T, I, H> {
 
 };
 } //namespace cross
-#include "detail/impl/dimension.ipp"
+#include "../detail/impl/dimension.ipp"
 
 
 #endif

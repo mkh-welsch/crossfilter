@@ -4,7 +4,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Copyright (c) 2018 Dmitry Vinokurov */
 
-#include "detail/crossfilter_impl.hpp"
+#include "../../detail/crossfilter_impl.hpp"
 #include <numeric>
 namespace {
 static constexpr int REMOVED_INDEX = -1;

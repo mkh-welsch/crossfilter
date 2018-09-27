@@ -6,10 +6,10 @@
 
 #include <numeric>
 #include <unordered_map>
-#include "crossfilter.hpp"
+#include "../../crossfilter.hpp"
 //#define USE_STD_SORT
 #ifndef USE_STD_SORT
-#include "detail/impl/dual_pivot_sort2.hpp"
+#include "../../detail/impl/dual_pivot_sort2.hpp"
 #endif
 
 namespace cross {

@@ -12,10 +12,10 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <utility>
 #include <type_traits>
 //#include <boost/signals2.hpp>
-#include "detail/feature_impl.hpp"
-#include "detail/crossfilter_impl.hpp"
-#include "detail/dimension_impl.hpp"
-#include "detail/thread_policy.hpp"
+#include "../detail/feature_impl.hpp"
+#include "../detail/crossfilter_impl.hpp"
+#include "../detail/dimension_impl.hpp"
+#include "../detail/thread_policy.hpp"
 
 namespace cross {
 template <typename Key, typename Reduce, typename Dimension,
@@ -59,7 +59,7 @@ struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
      according to the group order of the associated reduce value. The returned array is in descending order by reduce value.
    */
   std::vector<group_type_t> top(std::size_t k) noexcept {
-    writer_lock_t lk(feature_impl_t::dimension->lock());
+   // writer_lock_t lk(feature_impl_t::dimension->lock());
     return feature_impl_t::top(k);
   }
 
@@ -69,7 +69,7 @@ struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
    */
   template<typename OrderFunc>
   std::vector<group_type_t> top(std::size_t k, OrderFunc orderFunc) noexcept {
-    writer_lock_t lk(feature_impl_t::dimension->lock());
+  //  writer_lock_t lk(feature_impl_t::dimension->lock());
     return feature_impl_t::top(k, orderFunc);
   }
 
@@ -77,7 +77,7 @@ struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
      Returns the array of all groups, in ascending natural order by key. 
    */
   std::vector<group_type_t> &all() noexcept{
-    writer_lock_t lk(feature_impl_t::dimension->lock());
+   // writer_lock_t lk(feature_impl_t::dimension->lock());
     return feature_impl_t::all();
   }
 
@@ -85,7 +85,7 @@ struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
      Equivalent to all()[0].second.
    */
   reduce_type_t value() noexcept {
-    writer_lock_t lk(feature_impl_t::dimension->lock());
+   // writer_lock_t lk(feature_impl_t::dimension->lock());
     return feature_impl_t::value();
   }
 
@@ -96,7 +96,7 @@ struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
    */
   template<typename OrderFunc>
   this_type_t &   order(OrderFunc value) noexcept {
-    writer_lock_t lk(feature_impl_t::dimension->lock());
+   // writer_lock_t lk(feature_impl_t::dimension->lock());
     feature_impl_t::order(value);
     return *this;
   }
@@ -105,7 +105,7 @@ struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
      A convenience method for using natural order for reduce values. Returns this grouping.
    */
   this_type_t & order_natural() noexcept{
-    writer_lock_t lk(feature_impl_t::dimension->lock());
+   // writer_lock_t lk(feature_impl_t::dimension->lock());
     feature_impl_t::order_natural();
     return *this;
   }
@@ -113,7 +113,7 @@ struct feature: private impl::feature_impl<Key, Reduce, Dimension, isGroupAll> {
      Returns the number of distinct values in the group, independent of any filters; the cardinality.
    */
   std::size_t size() const noexcept {
-    reader_lock_t lk(feature_impl_t::dimension->lock());
+    //reader_lock_t lk(feature_impl_t::dimension->lock());
     return feature_impl_t::size();
   }
 

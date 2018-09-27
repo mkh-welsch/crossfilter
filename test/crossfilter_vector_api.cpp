@@ -67,10 +67,10 @@ BOOST_AUTO_TEST_CASE(push_back) {
   Fixture f;
   //  auto size = f.data.size();
   f.data.push_back(Record2{1,2,"aa"});
-  BOOST_TEST(5 == f.data.size());
+  BOOST_TEST(size_t(5) == f.data.size());
   const Record2 & r = Record2{1,2,"aa"};
   f.data.push_back(r);
-  BOOST_TEST(6 == f.data.size());
+  BOOST_TEST(size_t(6) == f.data.size());
 }
 
 BOOST_AUTO_TEST_CASE(assign_to_empty_with_iterators) {
@@ -82,32 +82,32 @@ BOOST_AUTO_TEST_CASE(assign_to_empty_with_iterators) {
     {4,5,"aba"},
   };
   data.assign(std::begin(input),std::end(input));
-  BOOST_TEST(4 == data.size());
+  BOOST_TEST(size_t(4) == data.size());
 }
 BOOST_AUTO_TEST_CASE(assign_to_non_empty_with_iterators) {
   Fixture f;
   Record2 input[] = {
     {1,2,"aaa"},
   };
-  BOOST_TEST(4 == f.data.size());
+  BOOST_TEST(size_t(4) == f.data.size());
   f.data.assign(std::begin(input),std::end(input));
-  BOOST_TEST(1 == f.data.size());
+  BOOST_TEST(size_t(1) == f.data.size());
 }
 
 BOOST_AUTO_TEST_CASE(assign_to_empty_with_value) {
   cross::filter<Record2> data;
   data.assign(10,Record2{1,2,"aaa"});
-  BOOST_TEST(10 == data.size());
+  BOOST_TEST(size_t(10) == data.size());
   data.assign(10,Record2{1,2,"aaa"},false);
-  BOOST_TEST(1 == data.size());
+  BOOST_TEST(size_t(1) == data.size());
 }
 BOOST_AUTO_TEST_CASE(assign_to_non_empty_value) {
   Fixture f;
-  BOOST_TEST(4 == f.data.size());
+  BOOST_TEST(size_t(4) == f.data.size());
   f.data.assign(10,Record2{1,2,"aaa"});
-  BOOST_TEST(10 == f.data.size());
+  BOOST_TEST(size_t(10) == f.data.size());
   f.data.assign(10,Record2{1,2,"aaa"},false);
-  BOOST_TEST(1 == f.data.size());
+  BOOST_TEST(size_t(1) == f.data.size());
 }
 
 BOOST_AUTO_TEST_CASE(assign_to_empty_with_initializer_list) {
@@ -117,18 +117,18 @@ BOOST_AUTO_TEST_CASE(assign_to_empty_with_initializer_list) {
                 {3,4,"aac"},
                 {4,5,"aba"}}
     );
-  BOOST_TEST(4 == data.size());
+  BOOST_TEST(size_t(4) == data.size());
 }
 BOOST_AUTO_TEST_CASE(assign_to_non_empty_with_initializer_list) {
   Fixture f;
-  BOOST_TEST(4 == f.data.size());
+  BOOST_TEST(size_t(4) == f.data.size());
   f.data.assign( {{1,2,"aaa"},
                   {2,3,"aab"},
                   {3,4,"aac"},
                   {4,5,"aba"},
                   {5,6,"abb"}
     });
-  BOOST_TEST(5 == f.data.size());
+  BOOST_TEST(size_t(5) == f.data.size());
 }
 
 BOOST_AUTO_TEST_CASE(at_throw_exception) {
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(iterators) {
     BOOST_TEST(p->c == f.data.at(i).c);
   }
 
-  BOOST_TEST(std::distance(f.data.begin(), f.data.end()) == f.data.size());
+  BOOST_TEST(size_t(std::distance(f.data.begin(), f.data.end())) == f.data.size());
   p = std::begin(f.data);
   std::advance(p,1);
   BOOST_TEST((Record2{2,3,"aab"}) == *p);
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(reverse_iterators) {
     BOOST_TEST(p->c == f.data.at(i).c);
   }
 
-  BOOST_TEST(std::distance(f.data.rbegin(), f.data.rend()) == f.data.size());
+  BOOST_TEST(size_t(std::distance(f.data.rbegin(), f.data.rend())) == f.data.size());
   p = std::rbegin(f.data);
   std::advance(p,1);
   BOOST_TEST((Record2{3,4,"aac"}) == *p);
@@ -207,26 +207,26 @@ BOOST_AUTO_TEST_CASE(erase_single_element) {
   Fixture f;
   // erase first element
   f.data.erase(f.data.begin());
-  BOOST_TEST(f.data.size() == 3);
+  BOOST_TEST(f.data.size() == size_t(3));
   BOOST_TEST(f.data[0] == (Record2{2,3,"aab"}));
 
   // erase element in the middle
   auto p = f.data.begin();
   std::advance(p,1);
   f.data.erase(p);
-  BOOST_TEST(f.data.size() == 2);
+  BOOST_TEST(f.data.size() == size_t(2));
   BOOST_TEST(f.data[0] == (Record2{2,3,"aab"}));
   BOOST_TEST(f.data[1] == (Record2{4,5,"aba"}));
   // erase last element
   p = f.data.end();
   p--;
   f.data.erase(p);
-  BOOST_TEST(f.data.size() == 1);
+  BOOST_TEST(f.data.size() == size_t(1));
   BOOST_TEST(f.data[0] == (Record2{2,3,"aab"}));
 
   // erase last element from container with 1 element
   f.data.erase(f.data.begin());
-  BOOST_TEST(f.data.size() == 0);
+  BOOST_TEST(f.data.size() == size_t(0));
 }
 
 BOOST_AUTO_TEST_CASE(erase_all_elements) {

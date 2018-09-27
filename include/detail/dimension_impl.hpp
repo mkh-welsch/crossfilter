@@ -11,9 +11,9 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <utility>
 #include <tuple>
 #include <type_traits>
-#include "detail/crossfilter_impl.hpp"
-#include "detail/utils.hpp"
-#include "detail/thread_policy.hpp"
+#include "../detail/crossfilter_impl.hpp"
+#include "../detail/utils.hpp"
+#include "../detail/thread_policy.hpp"
 
 namespace cross {
 template <typename, typename, typename, typename> struct dimension;

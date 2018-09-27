@@ -14,12 +14,12 @@ Copyright (c) 2018 Dmitry Vinokurov */
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
-#include "detail/signal_base.hpp"
-#include "detail/bitarray.hpp"
-#include "detail/utils.hpp"
-#include "detail/dimension.hpp"
-#include "detail/feature.hpp"
-#include "detail/thread_policy.hpp"
+#include "../detail/signal_base.hpp"
+#include "../detail/bitarray.hpp"
+#include "../detail/utils.hpp"
+#include "../detail/dimension.hpp"
+#include "../detail/feature.hpp"
+#include "../detail/thread_policy.hpp"
 
 namespace cross {
 template <typename, typename> struct filter;
