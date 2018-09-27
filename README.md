@@ -193,5 +193,8 @@ $ make benchmark
 $ ../benchmark/benchBin/benchmark1
 ```
 
+# dependencies
+
+crossfilter uses the awesum nod singnal/slot lib. it is included.
 
 
