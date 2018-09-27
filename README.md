@@ -172,15 +172,20 @@ totals.filter(100); // change total filter to 100
 docu coming soon...
 
 ## run
-cross::filter work head only. just include the header
+you need STL and C++14 support to compile
+
+cross::filter works headonly. just include the header into your project
 ```C++
 #include "crossfilter.hpp"
 ```
 
 and compile for example with
 ```terminal
-clang++ ./demo/demo1.cpp -o .demo -std=c++14
+$ clang++ ./demo/demo1.cpp -std=c++14
+$ ./a.out
 ```
+
+
 
 however tests & benchmark require a build system
 ```console
@@ -196,5 +201,6 @@ $ ../benchmark/benchBin/benchmark1
 # dependencies
 
 crossfilter uses the awesum nod singnal/slot lib. it is included.
+
 
 
