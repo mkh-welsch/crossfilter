@@ -228,7 +228,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
      Returns all of the raw records in the crossfilter, independent of any filters
    */
   std::vector<T> all() const {
-    //reader_lock_t lk(mutex);
+    reader_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     return impl_type_t::all();
   }
 
@@ -238,7 +239,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
    */
   template<typename ...Ts>
   std::vector<T> all_filtered(Ts&... dimensions) const {
-    //reader_lock_t lk(mutex);
+    reader_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     return impl_type_t::all_filtered(dimensions...);
   }
 
@@ -248,7 +250,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
    */
   template<typename ...Ts>
   bool is_element_filtered(std::size_t index, Ts&... dimensions) const {
-    //reader_lock_t lk(mutex);
+    reader_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     return impl_type_t::is_element_filtered(index,dimensions...);
   }
 
@@ -267,7 +270,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
   */
   template<typename F>
   auto iterable_dimension(F getter) ->cross::dimension<decltype(getter(std::declval<record_type_t>())), T, cross::iterable, Hash> {
-    //writer_lock_t lk(mutex);
+    writer_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     using value_type = decltype(getter(record_type_t()));
     return impl_type_t::template iterable_dimension<value_type>(getter);
   }
@@ -326,7 +330,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
 
   void assign(std::size_t n, const T & val, bool allow_duplicate = true) {
     {
-      //writer_lock_t lk(mutex);
+      writer_lock_t lk(mutex);
+      (void)lk; // avoid AppleClang warning about unused variable;
       if(!this->empty_unlocked()) {
         impl_type_t::clear();
       }
@@ -343,7 +348,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
   template<typename InputIterator>
   void assign(InputIterator first, InputIterator last, bool allow_duplicate = true) {
     {
-      //writer_lock_t lk(mutex);
+      writer_lock_t lk(mutex);
+      (void)lk; // avoid AppleClang warning about unused variable;
       if(!empty_unlocked()) {
         impl_type_t::clear();
       }
@@ -357,7 +363,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
   }
 
   const T & at(std::size_t n) const {
-    //reader_lock_t lk(mutex);
+    reader_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     if(n > impl_type_t::size()-1) {
       std::ostringstream os;
       os << "n (which is " << n << ") >= " << size() << " (which is " << size() << ")";
@@ -366,7 +373,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
     return impl_type_t::get_raw(n);
   }
   const T & back() const noexcept {
-    //reader_lock_t lk(mutex);
+    reader_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     return impl_type_t::data.back();
   }
   iterator begin() noexcept {
@@ -382,7 +390,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
     return  iterator(size(),impl_type_t::data);
   }
   void clear() {
-    //writer_lock_t lk(mutex);
+    writer_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     impl_type_t::clear();
 
   }
@@ -399,7 +408,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
     return reverse_iterator(begin());
   };
   bool empty() const noexcept {
-    //reader_lock_t lk(mutex);
+    reader_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     return size() == 0;
   }
   iterator erase(iterator position) {
@@ -414,7 +424,6 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
     return p;
   }
   iterator erase( iterator first, iterator last) {
-    //writer_lock_t lk(mutex);
     mutex.lock();
     std::size_t dist = std::distance(begin(),last);
     impl_type_t::remove(first.index,last.index);
@@ -425,12 +434,14 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
     return p;
   }
   const T& front() const noexcept {
-    //reader_lock_t lk(mutex);
+    reader_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     return impl_type_t::data.front();
   }
   iterator insert( iterator pos, const T & x, bool allow_duplicates = true) {
     {
-     // writer_lock_t lk(mutex);
+      writer_lock_t lk(mutex);
+      (void)lk; // avoid AppleClang warning about unused variable;
       impl_type_t::add(pos.index,x, allow_duplicates);
     }
     on_change_signal(cross::dataAdded);
@@ -439,7 +450,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
 
   iterator insert( iterator pos, std::initializer_list<T> l, bool allow_duplicates = true) {
     {
-     // writer_lock_t lk(mutex);
+      writer_lock_t lk(mutex);
+      (void)lk; // avoid AppleClang warning about unused variable;
       impl_type_t::add(pos.index,l.begin(),l.end(), allow_duplicates);
     }
     on_change_signal(cross::dataAdded);
@@ -447,7 +459,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
   }
   iterator insert( iterator pos, std::size_t n, const T & x, bool allow_duplicates = true) {
     {
-      //writer_lock_t lk(mutex);
+      writer_lock_t lk(mutex);
+      (void)lk; // avoid AppleClang warning about unused variable;
       if(pos == end()) {
         std::vector<T> tmp(n,x);
         impl_type_t::add(tmp,allow_duplicates);
@@ -464,7 +477,8 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
   template<typename InputIterator>
   iterator insert( iterator pos, InputIterator first, InputIterator last, bool allow_duplicates = true) {
     {
-     // writer_lock_t lk(mutex);
+      writer_lock_t lk(mutex);
+      (void)lk; // avoid AppleClang warning about unused variable;
       impl_type_t::add(pos.index,first,last,allow_duplicates);
     }
     return iterator(pos.index,impl_type_t::data);
@@ -481,16 +495,19 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
     assign(l.begin(), l.end());
   }
   const T& operator[] (std::size_t n) const noexcept {
-    //reader_lock_t lk(mutex);
+    reader_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     return impl_type_t::get_raw(n);
   }
   void pop_back () noexcept {
-    //writer_lock_t lk(mutex);
+    writer_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     std::size_t last = size()-1;
     impl_type_t::remove([last](const auto&, int i ) { return std::size_t(i) == last;});
   }
   void push_back (const T &x, bool allow_duplicates = true) {
-    //writer_lock_t lk(mutex);
+    writer_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     impl_type_t::add(impl_type_t::data.size(),x, allow_duplicates);
   }
   // void push_back (T && x, bool allow_duplicates = true) {
@@ -498,26 +515,31 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
   //   impl_type_t::add(std::move(x),allow_duplicates);
   // }
   const T * data () const noexcept {
-    //reader_lock_t lk(mutex);
+    reader_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     return impl_type_t::data.data();
   }
 
   template<typename... _Args> iterator emplace (iterator position, _Args &&... args) {
-    //writer_lock_t lk(mutex);
+    writer_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     auto index = impl_type_t::emplace(position.index,args...);
     return iterator(index,data);
   }
   template<typename... _Args> void emplace_back (_Args &&... args) {
-    //writer_lock_t lk(mutex);
+    writer_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     impl_type_t::emplace(end().index,args...);
   }
 
   void reserve (std::size_t n) {
-    //writer_lock_t lk(mutex);
+    writer_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     impl_type_t::data.reserve(n);
   }
   void shrink_to_fit () {
-    //writer_lock_t lk(mutex);
+    writer_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     impl_type_t::data.shrink_to_fit();
   }
   //void swap (filter & x) noexcept;
