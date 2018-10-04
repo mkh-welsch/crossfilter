@@ -15,7 +15,8 @@ typename std::enable_if<!std::is_same<C, T>::value, filter<T,H>&>::type
 filter<T,H>::add(const C &new_data, bool allow_duplicates) {
   //  auto logger = spdlog::get("console");
   {
-   // writer_lock_t lk(mutex);
+    writer_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     //    if(logger) logger->info("dataAdded_pre");
     impl_type_t::add(new_data, allow_duplicates);
   }
@@ -29,7 +30,8 @@ inline
 filter<T,H> & filter<T,H>::add(const T &new_data, bool allow_duplicates) {
   //  auto logger = spdlog::get("console");
   {
-   // writer_lock_t lk(mutex);
+    writer_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     //    if(logger) logger->info("dataAdded_pre");
     impl_type_t::add(impl_type_t::size(),new_data, allow_duplicates);
   }
@@ -41,7 +43,8 @@ filter<T,H> & filter<T,H>::add(const T &new_data, bool allow_duplicates) {
 template<typename T, typename H>
 inline
 std::size_t filter<T,H>::size() const {
- // reader_lock_t lk(mutex);
+  reader_lock_t lk(mutex);
+  (void)lk; // avoid AppleClang warning about unused variable;
   return impl_type_t::size();
 }
 
@@ -50,7 +53,8 @@ template<typename T, typename H>
 inline
 void filter<T,H>::remove(std::function<bool(const T&, int)> predicate) {
   {
-   // writer_lock_t lk(mutex);
+    writer_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     impl_type_t::remove(predicate);
   }
   on_change_signal(cross::dataRemoved);
@@ -61,7 +65,8 @@ template<typename T, typename H>
 inline
 void filter<T,H>::remove() {
   {
-   // writer_lock_t lk(mutex);
+    writer_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
     impl_type_t::remove();
   }
   on_change_signal(cross::dataRemoved);
@@ -76,7 +81,8 @@ filter<T,H>::feature(
     RemoveFunc remove_func_,
     InitialFunc initial_func_) -> cross::feature<std::size_t,
                                         decltype(initial_func_()), this_type_t, true> {
-  //reader_lock_t lk(mutex);
+  reader_lock_t lk(mutex);
+  (void)lk; // avoid AppleClang warning about unused variable;
   return impl_type_t::feature(this, add_func_, remove_func_, initial_func_);
 }
 
