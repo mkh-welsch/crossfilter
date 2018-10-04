@@ -461,6 +461,7 @@ BOOST_AUTO_TEST_CASE(check_constructors) {
     Rec(int k):i(k) {}
     Rec(Rec && k):i(k.i + 1) {}
     Rec(const Rec & k):i(k.i+1) {}
+    Rec & operator=(const Rec&) = default;
     Rec & operator=(Rec && k) {
       i = k.i+1;
       return *this;
