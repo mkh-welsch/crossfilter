@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(construct_initializer_list) {
                                 {3,4,"aac"},
                                 {4,5,"aba"}}
     );
-  BOOST_TEST(4 == data.size());
+  BOOST_TEST(size_t(4) == data.size());
 }
 BOOST_AUTO_TEST_CASE(assign_to_empty_with_iterators) {
   cross::filter<Record2> data;
