@@ -54,9 +54,9 @@ BOOST_AUTO_TEST_CASE(add_duplicate_remove_and_add_again) {
     f.data.add(Record{1,2,"aaa"},true);
     BOOST_TEST((size + 1)== f.data.size());
     f.data.remove([](auto v,int) { return v.a == 1;});
-    BOOST_TEST(f.data.size() == 3);
+    BOOST_TEST(f.data.size() == size_t(3));
     f.data.add(Record{1,2,"aaa"},false);
-    BOOST_TEST(f.data.size() == 4);
+    BOOST_TEST(f.data.size() == size_t(4));
 }
 
 BOOST_AUTO_TEST_CASE(add_duplicate_filter_remove_and_add_again) {
@@ -67,9 +67,9 @@ BOOST_AUTO_TEST_CASE(add_duplicate_filter_remove_and_add_again) {
     auto dim = f.data.dimension([](auto v) { return v.a;});
     dim.filter(1);
     f.data.remove();
-    BOOST_TEST(f.data.size() == 3);
+    BOOST_TEST(f.data.size() == size_t(3));
     f.data.add(Record{1,2,"aaa"},false);
-    BOOST_TEST(f.data.size() == 4);
+    BOOST_TEST(f.data.size() == size_t(4));
 }
 
 BOOST_AUTO_TEST_CASE(add_batch_of_data) {
@@ -81,6 +81,6 @@ BOOST_AUTO_TEST_CASE(add_batch_of_data) {
             {4,5,"aba"},
     };
     f.data.add(in2,false);
-    BOOST_TEST( 4== f.data.size());
+    BOOST_TEST( size_t(4)== f.data.size());
 }
 
