@@ -50,7 +50,7 @@ auto totals = payments.dimension([](auto r) { return r.total;});
 Now, you can filter the record set in regarding to this dimension ...
 
 ```C++
-totals.filter(90); 							    // filter out every record, where total is 90
+totals.filter(90); 	// filter out every record, where total is 90
 ```
 ... and give back the filtered results as copys
 
