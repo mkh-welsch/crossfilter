@@ -73,10 +73,10 @@ template<typename T, typename Hash> struct filter_impl {
 #endif
 
   virtual ~filter_impl() {}
-  filter_impl() {}
+  filter_impl(Hash h):hash(h) {}
   filter_impl(filter_impl &&) = default;
   template<typename Iterator>
-  filter_impl(Iterator begin, Iterator end) {
+  filter_impl(Iterator begin, Iterator end, Hash h):hash(h) {
     data.assign(begin,end);
     data_size = data.size();
     filters.resize(data_size);
