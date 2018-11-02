@@ -46,6 +46,7 @@ CAST_DIMENSION_DEFINE(std::string, cross::non_iterable);
 //   return static_cast<cross::dimension<std::string, napi_ref>*>(ptr);
 //}
 
+
 #define CALL_FOR_TYPE(name, type, is_iterable,  ...)                       \
   switch((type)) {                                                      \
     case is_int64:                                                      \
@@ -92,6 +93,7 @@ CAST_DIMENSION_DEFINE(std::string, cross::non_iterable);
 //   }
 // };
 
+struct jsfeature;
 struct jsdimension {
   void* dim;
   int dim_type;
@@ -118,6 +120,7 @@ struct jsdimension {
   static napi_value filter(napi_env env, napi_callback_info info);
   static napi_value top(napi_env env, napi_callback_info info);
   static napi_value bottom(napi_env env, napi_callback_info info);
+  static napi_value create_feature(napi_env env, jsfeature* info);
 
 };
 
