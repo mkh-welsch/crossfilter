@@ -342,7 +342,7 @@ napi_value crossfilter::feature_count(napi_env env, napi_callback_info info) {
   feature->key_type = is_uint64;
   feature->value_type = is_uint64;
   feature->dim_type = is_cross;
-  feature->ptr = new feature_holder<uint64_t,uint64_t,cross::filter<void*, std::function<uint64_t(void*)>>, true>(obj->filter.feature_count());
+  feature->ptr = new feature_holder<std::size_t,std::size_t,cross::filter<void*, std::function<uint64_t(void*)>>, true>(obj->filter.feature_count());
   feature->is_group_all  = true;
   return create_feature(env, feature);
 
@@ -376,7 +376,7 @@ static napi_value feature_sum_(napi_env env, js_function & jsf, crossfilter * ob
   feature->key_type = is_uint64;
   feature->value_type = value_type;
   feature->dim_type = is_cross;
-  feature->ptr = new feature_holder<uint64_t,V,cross::filter<void*, std::function<uint64_t(void*)>>, true>(std::move(obj->filter.feature_sum(make_value<V>(env, this_ref, value_ref, obj->obj_type))));
+  feature->ptr = new feature_holder<std::size_t,V,cross::filter<void*, std::function<uint64_t(void*)>>, true>(std::move(obj->filter.feature_sum(make_value<V>(env, this_ref, value_ref, obj->obj_type))));
   return create_feature(env,feature);
 }
 
@@ -466,7 +466,7 @@ template<typename V>
     NAPI_CALL(napi_create_reference(env, jsf.args[1], 1, &add_ref));
     NAPI_CALL(napi_create_reference(env, jsf.args[2], 1, &remove_ref));
     NAPI_CALL(napi_create_reference(env, jsf.args[3], 1, &init_ref));
-    feature->ptr = new feature_holder<uint64_t,V,cross::filter<void*,std::function<uint64_t(void*)>>, true>(obj->filter.feature(make_add<V>(env,  this_ref, add_ref, obj->obj_type),
+    feature->ptr = new feature_holder<std::size_t,V,cross::filter<void*,std::function<uint64_t(void*)>>, true>(obj->filter.feature(make_add<V>(env,  this_ref, add_ref, obj->obj_type),
                                                                                                  make_remove<V>(env, this_ref, remove_ref, obj->obj_type),
                                                                                                  make_init<V>(env, this_ref, init_ref)));
     feature->is_group_all  = true;
