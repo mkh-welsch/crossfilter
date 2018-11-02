@@ -46,24 +46,28 @@ template<typename K, typename V, typename D >
     NAPI_CALL(napi_create_reference(env, jsf.args[2], 1, &key_ref));
     napi_ref value_ref;
     NAPI_CALL(napi_create_reference(env, jsf.args[3], 1, &value_ref));
-    auto & d = cast_dimension<D, cross::non_iterable>(obj->dim);
+    auto & d = cast_dimension<D, cross::iterable>(obj->dim);
 
     jsfeature * feature = new jsfeature();
     feature->key_type = key_type;
     feature->value_type = value_type;
     feature->dim_type = obj->dim_type;
-    feature->is_iterable = false;
+    feature->is_iterable = true;
+    feature->is_group_all = false;
     using value_type_t = typename std::remove_reference<decltype(d)>::type::value_type_t;
     using key_tag_type = typename define_tag<K>::type;
     using reduce_tag_type = typename define_tag<V>::type;
     using value_tag_type = typename define_tag<value_type_t>::type;
     feature->ptr = new feature_holder<K,V,typename std::remove_reference<decltype(d)>::type, false>(std::move(d.feature_sum(make_value(env, obj, this_ref, value_ref,reduce_tag_type()),
                                                                                                                             make_key(env, obj, this_ref, key_ref, key_tag_type(), value_tag_type()))));
+
+    // feature->ptr = new feature_holder<K,V,typename std::remove_reference<decltype(d)>::type, false>(std::move(d.feature_sum(make_value<V>(env, obj, this_ref, value_ref),
+    //                                                                                                                         make_key<K,value_type_t>(env, obj, this_ref, key_ref))));
     return jsdimension::create_feature(env,feature);
   }
 
 #define CALL_DISPATCH_DIM_4(ktype, vtype, dtype, fn, ...)  \
-      return fn<ktype,vtype,dtype>(__VA_ARGS__);  \
+      return fn<ktype,vtype,js_array<dtype>>(__VA_ARGS__);  \
 
 #define CALL_DISPATCH_DIM_3(ktype, vtype, dtype, fn, ...) \
   switch(dtype) {                                                       \
@@ -121,16 +125,8 @@ template<typename K, typename V, typename D >
       CALL_DISPATCH_DIM_2(uint64_t, vtype, dtype, fn, __VA_ARGS__); \
       break;                                                            \
   }
-
- napi_value  jsdimension::feature_sum(napi_env env, napi_callback_info info) {
-    auto jsf = extract_function(env,info,4);
-    jsdimension * obj = get_object<jsdimension>(env, jsf.jsthis);
-    int32_t key_type = convert_to<int32_t>(env, jsf.args[0]);
-    int32_t value_type = convert_to<int32_t>(env, jsf.args[1]);
-    if(obj->is_iterable) {
-      return jsdimension::feature_sum_iterable(env, jsf, obj, key_type, value_type);
-    }
-    CALL_DISPATCH_DIM(key_type, value_type, obj->dim_type, feature_sum_, env,jsf,obj,key_type, value_type);
+napi_value  jsdimension::feature_sum_iterable(napi_env env, js_function & jsf, jsdimension *obj, int key_type, int value_type) {
+    CALL_DISPATCH_DIM(key_type, value_type, obj->dim_type,feature_sum_,env,jsf,obj,key_type, value_type);
     return nullptr;
   }
 

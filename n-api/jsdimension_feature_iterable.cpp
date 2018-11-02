@@ -1,6 +1,9 @@
 #include "jsdimension.hpp"
 #include "jsfeature.hpp"
 #include "make_lambda.hpp"
+#include "make_key.ipp"
+#include "make_reduce.ipp"
+#include "make_init.ipp"
 
 template<typename K, typename R, typename D>
 static napi_value feature_(napi_env env, js_function& jsf, jsdimension * obj, int key_type, int value_type) {

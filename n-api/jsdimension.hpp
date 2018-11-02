@@ -113,6 +113,7 @@ struct jsdimension {
   static napi_value feature_all(napi_env env, napi_callback_info info);
   static napi_value feature_count(napi_env env, napi_callback_info info);
   static napi_value feature_sum(napi_env env, napi_callback_info info);
+  static napi_value feature_sum_iterable(napi_env env, js_function & jsf, jsdimension * obj, int key_type, int value_type);
   //  static napi_value create_feature(napi_env env, jsfeature * feature);
   static void filter_function(js_function & jsf, jsdimension * dim);
   static void filter_exact(js_function & jsf, jsdimension * dim);

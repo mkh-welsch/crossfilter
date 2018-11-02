@@ -1,6 +1,9 @@
 #include "jsdimension.hpp"
 #include "jsfeature.hpp"
 #include "make_lambda.hpp"
+#include "make_key.ipp"
+#include "make_reduce.ipp"
+#include "make_init.ipp"
 
 // template<typename T, typename V>
 // static auto make_key(napi_env env, jsdimension * obj, napi_ref & this_ref, napi_ref & lambda_ref) {

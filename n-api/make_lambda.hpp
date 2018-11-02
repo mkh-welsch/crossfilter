@@ -8,14 +8,9 @@ struct is_string_tag {};
 struct is_uint64_t_tag {};
 using string = std::string;
 
-#include "make_key.ipp"
-#include "make_reduce.ipp"
-#include "make_init.ipp"
-
 template<typename T>
-struct define_tag {
-  
-};
+struct define_tag {};
+
 template<>
 struct define_tag<int64_t> {
   using type = is_int64_t_tag;

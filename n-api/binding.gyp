@@ -10,7 +10,7 @@
                      "jsdimension_feature_iterable.cpp",
                      "jsdimension_feature_count.cpp",
                      "jsdimension_feature_sum.cpp",
-
+                     "jsdimension_feature_sum_iterable.cpp",
                      "jsdimension.cpp",  "jsdimension_top_bottom.cpp", "jsdimension_filter.cpp", "utils.cpp",
                      "jsfeature.cpp", "jsfeature_all.cpp", "jsfeature_size.cpp", "jsfeature_value.cpp", "jsfeature_order.cpp", "jsfeature_order_natural.cpp"],
       "include_dirs": [ "../../crossfilter/include"],
