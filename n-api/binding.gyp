@@ -7,6 +7,7 @@
                      "jsdimension_all_count.cpp",
                      "jsdimension_all.cpp",
                      "jsdimension_feature.cpp",
+                     "jsdimension_feature_iterable.cpp",
                      "jsdimension_feature_count.cpp",
                      "jsdimension_feature_sum.cpp",
 

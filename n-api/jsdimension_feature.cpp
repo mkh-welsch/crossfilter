@@ -107,7 +107,7 @@ static auto make_init(napi_env env, jsdimension * obj, napi_ref & this_ref, napi
 // template<> auto make_init<bool> (napi_env env, jsdimension * obj, napi_ref & this_ref, napi_ref & init_ref);
 // template<> auto make_init<uint64_t> (napi_env env, jsdimension * obj, napi_ref & this_ref, napi_ref & init_ref);
 
-template<typename K, typename R, typename D,typename I >
+template<typename K, typename R, typename D >
 static napi_value feature_(napi_env env, js_function& jsf, jsdimension * obj, int key_type, int value_type, bool is_iterable) {
     jsfeature * feature = new jsfeature();
     feature->key_type = key_type;
