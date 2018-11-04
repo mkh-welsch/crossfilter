@@ -35,4 +35,27 @@ template<>
 struct define_tag<uint64_t> {
   using type = is_uint64_t_tag;
 };
+
+template<typename T>
+struct tag_to_type {};
+
+template<> struct tag_to_type<is_int64_t_tag> {
+  using type = int64_t;
+};
+template<> struct tag_to_type<is_int32_t_tag> {
+  using type = int32_t;
+};
+template<> struct tag_to_type<is_bool_tag> {
+  using type = bool;
+};
+template<> struct tag_to_type<is_double_tag> {
+  using type = double;
+};
+template<> struct tag_to_type<is_string_tag> {
+  using type = std::string;
+};
+template<> struct tag_to_type<is_uint64_t_tag> {
+  using type = uint64_t;
+};
+
 #endif

@@ -45,16 +45,22 @@ struct jsfeature {
   switch(dtype) {                                                       \
     case is_int64:                                                      \
       CALL_DISPATCH_F_4(ktype, vtype, int64_t, btype, itype,fn, __VA_ARGS__); \
+      break;                                                            \
     case is_int32:                                                      \
       CALL_DISPATCH_F_4(ktype, vtype, int32_t, btype, itype,fn, __VA_ARGS__); \
+      break;                                                            \
     case is_bool:                                                       \
       CALL_DISPATCH_F_4(ktype, vtype, bool, btype, itype,fn, __VA_ARGS__); \
+      break;                                                            \
     case is_double:                                                     \
       CALL_DISPATCH_F_4(ktype, vtype, double, btype, itype,fn, __VA_ARGS__); \
+      break;                                                            \
     case is_string:                                                     \
       CALL_DISPATCH_F_4(ktype, vtype, std::string, btype, itype,fn, __VA_ARGS__); \
+      break;                                                            \
     case is_uint64:                                                     \
       CALL_DISPATCH_F_4(ktype, vtype, uint64_t, btype, itype,fn, __VA_ARGS__); \
+      break;                                                            \
   }
 
 #define CALL_DISPATCH_F_2(ktype, vtype, dtype, btype, itype,fn, ...)  \
