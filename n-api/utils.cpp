@@ -9,6 +9,11 @@
 //#include "convert.hpp"
 
 template<>
+napi_value convert_to(napi_env, napi_value v) {
+  return v;
+}
+
+template<>
 int64_t convert_to(napi_env env, napi_value v) {
   int64_t i = 0;
   NAPI_CALL(napi_get_value_int64(env, v, &i));

@@ -56,7 +56,50 @@ suite.addBatch({
                 data.add([1,2,3,4]);
                 assert.equal(data.size(),4);
                 assert.deepEqual(data.all(),[1,2,3,4]);
+            },
+            "push_back" : function() {
+                var data = new cross.crossfilter();
+                data.push_back(1);
+                assert.equal(data.size(),1);
+                assert.deepEqual(data.all(),[1]);
+                data.push_back(2);
+                assert.equal(data.size(),2);
+                assert.deepEqual(data.all(),[1,2]);
+            },
+            "insert to begin to empty filter": function() {
+                var data = new cross.crossfilter();
+                data.insert(0,1);
+                assert.equal(data.size(),1);
+                assert.deepEqual(data.all(),[1]);
+            },
+            "insert to end to empty filter": function() {
+                var data = new cross.crossfilter();
+                data.insert(data.size(),1);
+                assert.equal(data.size(),1);
+                assert.deepEqual(data.all(),[1]);
+            },
+            "insert to begin to non empty": function() {
+                var data = new cross.crossfilter();
+                data.add([1,2,3,4]);
+                data.insert(0,1);
+                assert.equal(data.size(),5);
+                assert.deepEqual(data.all(),[1,1,2,3,4]);
+            },
+            "insert to end to non empty": function() {
+                var data = new cross.crossfilter();
+                data.add([1,2,3,4]);
+                data.insert(data.size(),1);
+                assert.equal(data.size(),5);
+                assert.deepEqual(data.all(),[1,2,3,4,1]);
+            },
+            "insert to middle to non empty": function() {
+                var data = new cross.crossfilter();
+                data.add([1,2,3,4]);
+                data.insert(2,1);
+                assert.equal(data.size(),5);
+                assert.deepEqual(data.all(),[1,2,1,3,4]);
             }
+
         },
         "duplicates": {
             topic: function() {
@@ -125,6 +168,65 @@ suite.addBatch({
                 assert.equal(data.size(),2);
                 assert.deepEqual(data.all(), [{ a: 1, b: 2 }, 
                                               { a: 3, b: 4 }]);
+            },
+            "erase one element": function() {
+                var data = new cross.crossfilter();
+                data.add([1,2,3,4]);
+                data.erase(0);
+                assert.deepEqual(data.all(),[2,3,4]);
+                data.erase(2);
+                assert.deepEqual(data.all(),[2,3]);
+            },
+            "erase range of elements": function() {
+                var data = new cross.crossfilter();
+                data.add([1,2,3,4,5,6,7,8]);
+                data.erase(2,5);
+                assert.deepEqual(data.all(),[1,2,6,7,8]);
+            }
+        },
+        "accessors": {
+            topic: function() {
+                var data = new cross.crossfilter();
+                data.add([1,2,3,4,5,6,7,8]);
+                return data;
+            },
+            "front": function(data) {
+                assert.equal(data.front(),1);
+            },
+            "back": function(data) {
+                assert.equal(data.back(),8);
+            },
+            "at": function(data) {
+                for(var i = 0; i < data.size(); i++) {
+                    assert.equal(data.at(i),i+1);
+                }
+            },
+        },
+        "callback": {
+            topic: function() {
+                var data = new cross.crossfilter();
+                data.add([1,2,3,4,5,6,7,8]);
+                return data;
+            },
+            "callback on data add": function(data) {
+                var b = false;
+                data.on_change(function(event) { if(event == "dataAdded") b = true;});
+                data.add(1);
+                assert.isTrue(b);
+            },
+            "callback on data remove": function(data) {
+                var b = false;
+                data.on_change(function(event) { if(event == "dataRemoved") b = true;});
+                data.erase(1);
+                assert.isTrue(b);
+            },
+            "callback on data filtered": function(data) {
+                var b = false;
+                data.on_change(function(event) { if(event == "dataFiltered") b = true;});
+                var dim = data.dimension(ctypes.int32,function(d) { return d;});
+                assert.isFalse(b);
+                dim.filter(1);
+                assert.isTrue(b);
             }
         },
         "filters": {

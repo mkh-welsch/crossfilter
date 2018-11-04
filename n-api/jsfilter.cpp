@@ -162,7 +162,7 @@ void crossfilter::print_obj(napi_env env, napi_value & object) {
 }
 
 
-static void add_value(napi_env env, napi_value value, crossfilter * obj, bool allow_duplicates) {
+static void add_value(napi_env env, napi_value value, crossfilter * obj, bool allow_duplicates, int64_t pos = -1) {
     napi_valuetype valuetype;
     NAPI_CALL(napi_typeof(env, value, &valuetype));  
 
@@ -173,7 +173,13 @@ static void add_value(napi_env env, napi_value value, crossfilter * obj, bool al
         napi_ref v;
         napi_status status = napi_create_reference(env, value, 1, &v);
         assert(status == napi_ok);
-        obj->filter.add((void*)v,allow_duplicates);
+        if(pos  == -1) {
+          obj->filter.add((void*)v,allow_duplicates);
+        } else {
+          auto p1 = obj->filter.begin();
+          std::advance(p1,pos);
+          obj->filter.insert(p1,(void*)v);
+        }
         obj->obj_type = is_object;
       } else {
         uint32_t size = 0;
@@ -188,16 +194,34 @@ static void add_value(napi_env env, napi_value value, crossfilter * obj, bool al
       switch(valuetype) {
         case napi_boolean:
           obj->obj_type = is_bool;
-          obj->filter.add((void*)new bool(convert_to<bool>(env, value)), allow_duplicates);
+          if(pos == -1) {
+            obj->filter.add((void*)new bool(convert_to<bool>(env, value)), allow_duplicates);
+          } else {
+            auto p = obj->filter.begin();
+            std::advance(p,pos);
+            obj->filter.insert(p,(void*)new bool(convert_to<bool>(env, value)));
+          }
           break;
         case napi_number:
           obj->obj_type = is_double;
-          obj->filter.add((void*)new double(convert_to<double>(env, value)), allow_duplicates);
+          if(pos == -1) {
+            obj->filter.add((void*)new double(convert_to<double>(env, value)), allow_duplicates);
+          } else {
+            auto p = obj->filter.begin();
+            std::advance(p,pos);
+            obj->filter.insert(p,(void*)new double(convert_to<double>(env, value)));
+          }
           break;
         case napi_string: {
           obj->obj_type = is_string;
           std::string * ptr = new std::string(convert_to<std::string>(env, value));
-          obj->filter.add((void*)ptr, allow_duplicates);
+          if(pos == -1) {
+            obj->filter.add((void*)ptr, allow_duplicates);
+          } else {
+            auto p = obj->filter.begin();
+            std::advance(p,pos);
+            obj->filter.insert(p,(void*)ptr);
+          }
           break;
         }
         default:
@@ -219,10 +243,11 @@ napi_value crossfilter::add(napi_env env, napi_callback_info info) {
       NAPI_CALL(napi_get_value_bool(env,jsf.args[1],&allow));
     }
     add_value(env, jsf.args[0], obj, allow);
-    napi_value num;
-    int32_t i = 1;
-    NAPI_CALL(napi_create_int32(env, i, &num));
-    return num;
+    // napi_value num;
+    // int32_t i = 1;
+    // NAPI_CALL(napi_create_int32(env, i, &num));
+    // return num;
+    return jsf.jsthis;
   }
 
 napi_value crossfilter::check_function(napi_env env, napi_callback_info info) {
@@ -523,4 +548,122 @@ napi_value crossfilter::is_element_filtered(napi_env env, napi_callback_info inf
   crossfilter * obj = get_object<crossfilter>(env, jsf.jsthis);
   std::size_t index = convert_to<uint64_t>(env, jsf.args[0]);
   return convert_from<bool>(env, obj->filter.is_element_filtered(index));
+}
+
+napi_value crossfilter::erase(napi_env env, napi_callback_info info) {
+  auto jsf = extract_function(env, info,2);
+  crossfilter * obj = get_object<crossfilter>(env, jsf.jsthis);
+  if(jsf.args.empty()) {
+    throw_js_error(env, "erase: not enough arguments");
+    return jsf.jsthis;
+  }
+  if(jsf.args.size() == 1) {
+    int index = convert_to<int64_t>(env, jsf.args[0]);
+    if(index < 0 || (uint64_t)index > obj->filter.size()) {
+      throw_js_error(env, "erase: bad argument");
+      return jsf.jsthis;
+    }
+    auto iterator = obj->filter.begin();
+    std::advance(iterator,index);
+    obj->filter.erase(iterator);
+  } else {
+    int left = convert_to<int32_t>(env, jsf.args[0]);
+    int right = convert_to<int32_t>(env, jsf.args[1]);
+    auto  p1 = obj->filter.begin();
+    auto  p2 = obj->filter.begin();
+    std::advance(p1,left);
+    std::advance(p2,right);
+    obj->filter.erase(p1,p2);
+  }
+  return jsf.jsthis;
+}
+
+napi_value crossfilter::insert(napi_env env, napi_callback_info info) {
+  auto jsf = extract_function(env, info, 2);
+  crossfilter * obj = get_object<crossfilter>(env, jsf.jsthis);
+  if(jsf.args.size() != 2) {
+    throw_js_error(env, "insert: wrong number of arguments");
+    return jsf.jsthis;
+  }
+  int pos = convert_to<int64_t>(env, jsf.args[0]);
+  add_value(env, jsf.args[1], obj, true, pos);
+  return jsf.jsthis;
+}
+
+napi_value crossfilter::at(napi_env env, napi_callback_info info) {
+  auto jsf = extract_function(env, info, 1);
+  crossfilter * obj = get_object<crossfilter>(env, jsf.jsthis);
+  if(jsf.args.size() != 1) {
+    throw_js_error(env, "at: wrong number of arguments");
+    return jsf.jsthis;
+  }
+  int64_t index = convert_to<int64_t>(env, jsf.args[0]);
+  if(index < 0 || (uint64_t)index > obj->filter.size()) {
+    throw_js_error(env, "erase: bad argument");
+    return jsf.jsthis;
+  }
+  auto v = obj->filter[index];
+  napi_value value = extract_value(env, v, obj->obj_type);
+  return value;
+}
+
+napi_value crossfilter::front(napi_env env, napi_callback_info info) {
+  auto jsf = extract_function(env, info, 0);
+  crossfilter * obj = get_object<crossfilter>(env, jsf.jsthis);
+  if(obj->filter.size() == 0) {
+    throw_js_error(env, "front: not enough elements");
+    return nullptr;
+  }
+  auto v = obj->filter.front();
+  napi_value value = extract_value(env, v, obj->obj_type);
+  return value;
+}
+napi_value crossfilter::back(napi_env env, napi_callback_info info) {
+  auto jsf = extract_function(env, info, 0);
+  crossfilter * obj = get_object<crossfilter>(env, jsf.jsthis);
+  if(obj->filter.size() == 0) {
+    throw_js_error(env, "back: not enough elements");
+    return nullptr;
+  }
+  auto v = obj->filter.back();
+  napi_value value = extract_value(env, v, obj->obj_type);
+  return value;
+}
+
+napi_value crossfilter::on_change(napi_env env, napi_callback_info info) {
+  auto jsf = extract_function(env, info, 1);
+  crossfilter * obj = get_object<crossfilter>(env, jsf.jsthis);
+  if(jsf.args.size() != 1) {
+    throw_js_error(env, "on_change: not enough arguments");
+    return jsf.jsthis;
+  }
+  napi_ref ref;
+  NAPI_CALL(napi_create_reference(env, jsf.args[0], 1, &ref));
+  obj->listeners.push_back(ref);
+  return jsf.jsthis;
+}
+
+void  crossfilter::on_change_event(cross::event event) {
+  std::string msg;
+  switch(event) {
+    case cross::dataAdded:
+      msg = "dataAdded";
+      break;
+    case cross::dataRemoved:
+      msg = "dataRemoved";
+      break;
+    case cross::dataFiltered:
+      msg = "dataFiltered";
+      break;
+  };
+  napi_value mv = convert_from<std::string>(env_,msg);
+  napi_value jthis;
+  NAPI_CALL(napi_get_reference_value(env_, wrapper, &jthis));
+  for(auto & l : listeners) {
+    napi_value res;
+    napi_value callback;
+    NAPI_CALL(napi_get_reference_value(env_, l, &callback));
+    NAPI_CALL(napi_call_function(env_, jthis, callback, 1,
+                                 &mv, &res));
+  }
 }

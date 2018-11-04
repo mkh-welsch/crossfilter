@@ -4,10 +4,6 @@
 
 napi_value New(napi_env env, napi_callback_info info) {
   napi_status status;
-
-  // napi_value target;
-  // NAPI_CALL(napi_get_new_target(env, info, &target));
-  //  bool is_constructor = target != nullptr;
   js_function jsf = extract_function(env, info, 1);
   crossfilter * obj;
   if(jsf.args.empty()) {
@@ -32,29 +28,17 @@ napi_value New(napi_env env, napi_callback_info info) {
   return jsf.jsthis;
   
 }
-
-// napi_value InitDim(napi_env env, napi_value exports) {
-//   napi_property_descriptor properties[] = {
-//     DECLARE_NAPI_METHOD("top", jsdimension::top)
-//   };
-//   napi_value cons;
-//   napi_status status =
-//       napi_define_class(env, "dimension", NAPI_AUTO_LENGTH, crossfilter::dimension_int64, nullptr, 1,properties, &cons);
-//   assert(status == napi_ok);
-
-//   status = napi_create_reference(env, cons, 1, &dimension::constructor);
-//   assert(status == napi_ok);
-
-//   status = napi_set_named_property(env, exports, "dimension", cons);
-//   assert(status == napi_ok);
-//   return exports;
-// }
-
 napi_value Init(napi_env env, napi_value exports) {
   napi_status status;
   napi_property_descriptor properties[] = {
     DECLARE_NAPI_METHOD("remove", crossfilter::remove),
+    DECLARE_NAPI_METHOD("erase", crossfilter::erase),
     DECLARE_NAPI_METHOD("add", crossfilter::add),
+    DECLARE_NAPI_METHOD("push_back", crossfilter::add),
+    DECLARE_NAPI_METHOD("insert", crossfilter::insert),
+    DECLARE_NAPI_METHOD("at", crossfilter::at),
+    DECLARE_NAPI_METHOD("back", crossfilter::back),
+    DECLARE_NAPI_METHOD("front", crossfilter::front),
     DECLARE_NAPI_METHOD("size", crossfilter::size),
     DECLARE_NAPI_METHOD("all", crossfilter::all),
     DECLARE_NAPI_METHOD("dimension", crossfilter::dimension),
@@ -62,7 +46,8 @@ napi_value Init(napi_env env, napi_value exports) {
     DECLARE_NAPI_METHOD("feature_count", crossfilter::feature_count),
     DECLARE_NAPI_METHOD("feature_sum", crossfilter::feature_sum),
     DECLARE_NAPI_METHOD("all_filtered", crossfilter::all_filtered),
-    DECLARE_NAPI_METHOD("is_element_filtered", crossfilter::is_element_filtered)
+    DECLARE_NAPI_METHOD("is_element_filtered", crossfilter::is_element_filtered),
+    DECLARE_NAPI_METHOD("on_change", crossfilter::on_change),
   };
 
   //InitDim(env, exports);

@@ -297,5 +297,8 @@ struct js_array {
   }
 };
 
+inline void throw_js_error(napi_env env, const std::string & msg) {
+  NAPI_CALL(napi_throw_error(env, nullptr, msg.c_str()));
+}
 #endif
 
