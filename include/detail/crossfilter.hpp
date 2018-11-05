@@ -243,6 +243,14 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
     (void)lk; // avoid AppleClang warning about unused variable;
     return impl_type_t::all_filtered(dimensions...);
   }
+  /**
+     auxilary method for n-api. analog of all_filtered
+   */
+  std::vector<T> all_filtered_except_mask(const std::vector<uint8_t> & mask) const {
+    reader_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
+    return impl_type_t::all_filtered_except_mask(mask);
+  }
 
   /**
      Check if the data record at index i is excluded by the current filter set.
@@ -253,6 +261,11 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
     reader_lock_t lk(mutex);
     (void)lk; // avoid AppleClang warning about unused variable;
     return impl_type_t::is_element_filtered(index,dimensions...);
+  }
+  bool is_element_filtered_except_mask(std::size_t index,const std::vector<uint8_t> & mask) const {
+    reader_lock_t lk(mutex);
+    (void)lk; // avoid AppleClang warning about unused variable;
+    return impl_type_t::is_element_filtered_except_mask(index,mask);
   }
 
   /**
@@ -543,7 +556,9 @@ template <typename T, typename Hash = trivial_hash<T>> struct filter: private im
     impl_type_t::data.shrink_to_fit();
   }
   //void swap (filter & x) noexcept;
-  
+  std::size_t filters_size() const {
+    return impl_type_t::filters.size();
+  }  
 };
 }
 #include "impl/crossfilter.ipp"

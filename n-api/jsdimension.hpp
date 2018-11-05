@@ -101,6 +101,8 @@ struct jsdimension {
   bool is_iterable;
   napi_ref wrapper;
   napi_env env_;
+  int dim_offset;
+  int dim_index;
   static napi_ref constructor;
 
   static void Destructor(napi_env env, void* nativeObject, void* finalize_hint);

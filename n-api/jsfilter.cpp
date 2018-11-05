@@ -1,3 +1,4 @@
+#include <bitset>
 #include "jsdimension.hpp"
 #include "jsfilter.hpp"
 #include "jsfeature.hpp"
@@ -21,17 +22,13 @@ static napi_value create_iterable_dimension(napi_env env,
   int filter_type = filter->obj_type;
   obj->filter_type = filter_type;
   obj->is_iterable = true;
-  obj->dim = new dimension_holder<js_array<Ret>, cross::iterable>(filter->filter.iterable_dimension(
+  auto dim = filter->filter.iterable_dimension(
       [obj, this_ref, lambda_ref, filter_type](auto v) -> js_array<Ret> {
-        // napi_value value;
-        // NAPI_CALL(napi_get_reference_value(obj->env_, v, &value));
-        
         napi_value value = extract_value(obj->env_,v,filter_type);
         napi_value this_value;
         NAPI_CALL(napi_get_reference_value(obj->env_, this_ref, &this_value));
         napi_value lambda_value;
         NAPI_CALL(napi_get_reference_value(obj->env_, lambda_ref, &lambda_value));
-        //napi_value result;
         js_array<Ret> arr;
         arr.env = obj->env_;
         NAPI_CALL(napi_call_function(obj->env_, this_value, lambda_value, 1,
@@ -39,15 +36,14 @@ static napi_value create_iterable_dimension(napi_env env,
         uint32_t sz = 0;
         NAPI_CALL(napi_get_array_length(obj->env_, arr.array, &sz));
         arr.length = sz;
-
-        // for (std::size_t i = 0; i < length; i++) {
-        //   napi_value r;
-        //   NAPI_CALL(napi_get_element(obj->env_, result, i, &r));
-        //   out.push_back(convert_to<Ret>(obj->env_, r));
-        // }
         return arr;
-      }));
-  //  obj->dim = dim;
+      });
+  obj->dim_offset = dim.get_offset();
+  obj->dim_index = dim.get_bit_index();
+
+  obj->dim = new dimension_holder<js_array<Ret>, cross::iterable>(std::move(dim));
+
+
   napi_value dim_this;
   NAPI_CALL(napi_create_object(env, &dim_this));
   NAPI_CALL(napi_wrap(env, dim_this, reinterpret_cast<void *>(obj),
@@ -79,20 +75,23 @@ static napi_value create_dimension(napi_env env,
   obj->dim_type = dim_type;
   obj->env_ = env;
   obj->filter_type = filter->obj_type;
-  obj->dim  = new dimension_holder<Ret,cross::non_iterable>(filter->filter.dimension([obj, this_ref,
-                                                                                      lambda_ref](void* v) -> Ret {
-                                                                                       napi_value value = extract_value(obj->env_, v, obj->filter_type);
-                                                                                       napi_value this_value;
-                                                                                       NAPI_CALL(napi_get_reference_value(obj->env_, this_ref, &this_value));
-                                                                                       napi_value lambda_value;
-                                                                                       NAPI_CALL(napi_get_reference_value(obj->env_, lambda_ref, &lambda_value));
-                                                                                       napi_value result;
-                                                                                       NAPI_CALL(napi_call_function(obj->env_, this_value, lambda_value, 1, &value,
-                                                                                                                    &result));
-                                                                                       napi_valuetype vt;
-                                                                                       NAPI_CALL(napi_typeof(obj->env_, result, &vt));
-                                                                                       return convert_to<Ret>(obj->env_, result);
-                                                                                     }));
+  auto dim = filter->filter.dimension([obj, this_ref,
+                                       lambda_ref](void* v) -> Ret {
+                                        napi_value value = extract_value(obj->env_, v, obj->filter_type);
+                                        napi_value this_value;
+                                        NAPI_CALL(napi_get_reference_value(obj->env_, this_ref, &this_value));
+                                        napi_value lambda_value;
+                                        NAPI_CALL(napi_get_reference_value(obj->env_, lambda_ref, &lambda_value));
+                                        napi_value result;
+                                        NAPI_CALL(napi_call_function(obj->env_, this_value, lambda_value, 1, &value,
+                                                                     &result));
+                                        napi_valuetype vt;
+                                        NAPI_CALL(napi_typeof(obj->env_, result, &vt));
+                                        return convert_to<Ret>(obj->env_, result);
+                                      });
+  obj->dim_offset = dim.get_offset();
+  obj->dim_index = dim.get_bit_index();
+  obj->dim  = new dimension_holder<Ret,cross::non_iterable>(std::move(dim));
 
   napi_value dim_this;
   NAPI_CALL(napi_create_object(env, &dim_this));
@@ -109,7 +108,6 @@ static napi_value create_dimension(napi_env env,
   add_function(env, dim_this, jsdimension::feature_all, "feature_all");
   add_function(env, dim_this, jsdimension::feature_all_count, "feature_all_count");
   add_function(env, dim_this, jsdimension::feature_all_sum, "feature_all_sum");
-  //    add_function(env, dim_this, dimension::filter, filter);
 
   return dim_this;
 }
@@ -126,13 +124,6 @@ static napi_value make_dimension(napi_env env,
   return create_dimension<T>(env, jsf, dim_type);
 }
 
-// template <typename F>
-// static void add_function(napi_env env, napi_value obj, F func,
-//                                       const std::string &name) {
-//   napi_value fn;
-//   napi_create_function(env, nullptr, 0, func, nullptr, &fn);
-//   napi_set_named_property(env, obj, name.c_str(), fn);
-// }
 
 void crossfilter::Destructor(napi_env env, void* nativeObject, void* finalize_hint) {
   auto obj = reinterpret_cast<crossfilter*>(nativeObject);
@@ -243,46 +234,13 @@ napi_value crossfilter::add(napi_env env, napi_callback_info info) {
       NAPI_CALL(napi_get_value_bool(env,jsf.args[1],&allow));
     }
     add_value(env, jsf.args[0], obj, allow);
-    // napi_value num;
-    // int32_t i = 1;
-    // NAPI_CALL(napi_create_int32(env, i, &num));
-    // return num;
     return jsf.jsthis;
   }
 
 napi_value crossfilter::check_function(napi_env env, napi_callback_info info) {
-    // js_function jsf = extract_function(env, info, 1);
-    // napi_value argv;
-    // crossfilter* obj = get_object<crossfilter>(env, jsf.jsthis);
-    // auto all = obj->filter.all();
-    // napi_get_reference_value(env, all[0], & argv);
-    // napi_value result;
-    // napi_call_function(env,jsf.jsthis,jsf.args[0],1,&argv,&result);
-    // return result;
   return nullptr;
   }
 
-//  bool crossfilter::convert_to_bool(napi_env env, napi_value v) {
-//    bool b = false;
-//    NAPI_CALL(napi_get_value_bool(env, v, &b));
-//    return b;
-//  }
-// bool crossfilter::convert_to_int32(napi_env env, napi_value v) {
-//     int32_t i = 0;
-//     NAPI_CALL(napi_get_value_int32(env, v, &i));
-//     return i;
-//   }
-// int64_t crossfilter::convert_to_int64(napi_env env, napi_value v) {
-//     int64_t i = 0;
-//     NAPI_CALL(napi_get_value_int64(env, v, &i));
-//     return i;
-//   }
-
-// double crossfilter::convert_to_double(napi_env env, napi_value v) {
-//     double d = 0;
-//     NAPI_CALL(napi_get_value_double(env, v, &d));
-//     return d;
-//   }
 
 napi_value crossfilter::dimension(napi_env env, napi_callback_info info ) {
   js_function jsf = extract_function(env, info, 3);
@@ -525,6 +483,33 @@ napi_value crossfilter::size(napi_env env, napi_callback_info info) {
   return convert_from<int64_t>(env, sz);
 }
 
+static std::vector<uint8_t> get_mask(napi_env env, crossfilter * obj, napi_value arg) {
+  std::vector<uint8_t> mask(obj->filter.filters_size(),0);
+  napi_valuetype valuetype;
+  napi_typeof(env, arg, &valuetype);
+  if(valuetype == napi_object) {
+    bool is_array = false;
+    napi_is_array(env, arg, &is_array);
+    if(!is_array) {
+      jsdimension * d = get_object<jsdimension>(env, arg);
+      std::bitset<8> b = 0;
+      b.set(d->dim_index, true);
+      mask[d->dim_offset] = b.to_ulong();
+    } else {
+      uint32_t size = 0;
+      napi_get_array_length(env, arg, &size);
+      for(uint32_t i = 0; i < size; i++) {
+        napi_value v;
+        napi_get_element(env, arg, i, & v);
+        jsdimension * d = get_object<jsdimension>(env, v);
+        std::bitset<8> b = mask[d->dim_offset];
+        b.set(d->dim_index,true);
+        mask[d->dim_offset] = b.to_ulong();
+      }
+    }
+  }
+  return mask;
+}
 napi_value crossfilter::all_filtered(napi_env env, napi_callback_info info) {
   auto jsf = extract_function(env, info, 1);
   crossfilter * obj = get_object<crossfilter>(env, jsf.jsthis);
@@ -539,15 +524,55 @@ napi_value crossfilter::all_filtered(napi_env env, napi_callback_info info) {
       i++;
     }
     return result;
+  } else {
+    // std::vector<uint8_t> mask(obj->filter.filters_size(),0);
+    // napi_valuetype valuetype;
+    // napi_typeof(env, jsf.args[0], &valuetype);
+    // if(valuetype == napi_object) {
+    //   bool is_array = false;
+    //   napi_is_array(env, jsf.args[0], &is_array);
+    //   if(!is_array) {
+    //     jsdimension * d = get_object<jsdimension>(env, jsf.args[0]);
+    //     std::bitset<8> b = 0;
+    //     b.set(d->dim_index, true);
+    //     mask[d->dim_offset] = b.to_ulong();
+    //   } else {
+    //     uint32_t size = 0;
+    //     napi_get_array_length(env, jsf.args[0], &size);
+    //     for(uint32_t i = 0; i < size; i++) {
+    //       napi_value v;
+    //       napi_get_element(env, jsf.args[0], i, & v);
+    //       jsdimension * d = get_object<jsdimension>(env, v);
+    //       std::bitset<8> b = mask[d->dim_offset];
+    //       b.set(d->dim_index,true);
+    //       mask[d->dim_offset] = b.to_ulong();
+    //     }
+    //   }
+    auto data = obj->filter.all_filtered_except_mask(get_mask(env, obj, jsf.args[0]));
+    napi_value result;
+    NAPI_CALL(napi_create_array_with_length(env, data.size(), &result));
+    int i = 0;
+    for(auto & v : data) {
+      napi_value value = extract_value(env, v, obj->obj_type);
+      NAPI_CALL(napi_set_element(env, result, i, value));
+      i++;
+    }
+    return result;
   }
   return nullptr;
 }
 
 napi_value crossfilter::is_element_filtered(napi_env env, napi_callback_info info) {
-  auto jsf = extract_function(env, info, 1);
+  auto jsf = extract_function(env, info, 2);
   crossfilter * obj = get_object<crossfilter>(env, jsf.jsthis);
   std::size_t index = convert_to<uint64_t>(env, jsf.args[0]);
-  return convert_from<bool>(env, obj->filter.is_element_filtered(index));
+  if(jsf.args.size() == 1) {
+    return convert_from<bool>(env, obj->filter.is_element_filtered(index));
+  } else {
+    bool b = obj->filter.is_element_filtered_except_mask(index, get_mask(env, obj, jsf.args[1]));
+    return convert_from<bool>(env, b);
+  }
+  return nullptr;
 }
 
 napi_value crossfilter::erase(napi_env env, napi_callback_info info) {

@@ -287,6 +287,39 @@ suite.addBatch({
                 dim1.filter();
                 dim2.filter();
             },
+            "all_filtered affected by mask": function(data) {
+                var dim1 = data.dimension(ctypes.int32, function(d) {return d.a;});
+                var dim2 = data.dimension(ctypes.int32, function(d) {return d.b;});
+                var dim3 = data.dimension(ctypes.int32, function(d) {return d.a;});
+                dim1.filter(function(d) {return d % 2 == 0;});
+                dim2.filter(1,6);
+                var all_filtered = data.all_filtered(dim1);
+                assert.deepEqual(all_filtered, [
+                    {a:1, b:2},
+                    {a:2, b:3},
+                    {a:3, b:4},
+                    {a:4, b:5}
+                ]);
+                var all2 = data.all_filtered([dim1,dim2]);
+                assert.deepEqual(all2, data.all());
+                dim1.filter();
+                dim2.filter();
+
+            },
+            "is_element_filtered affected by mask": function(data) {
+                var dim1 = data.dimension(ctypes.int32, function(d) {return d.a;});
+                var dim2 = data.dimension(ctypes.int32, function(d) {return d.b;});
+                var dim3 = data.dimension(ctypes.int32, function(d) {return d.a;});
+                dim1.filter(function(d) {return d % 2 == 0;});
+                dim2.filter(1,6);
+                assert.equal(data.is_element_filtered(0,[dim1]), true);
+                assert.equal(data.is_element_filtered(0,[dim2]), false);
+                assert.equal(data.is_element_filtered(6,[dim2]), true);
+                assert.equal(data.is_element_filtered(6,[dim1]), false);
+                assert.equal(data.is_element_filtered(7,[dim1,dim2]), true);
+                assert.equal(data.is_element_filtered(4), false);
+
+            },
             "is_element_filtered affected by all dimension filters": function(data) {
                 var dim1 = data.dimension(ctypes.int32, function(d) {return d.a;});
                 var dim2 = data.dimension(ctypes.int32, function(d) {return d.b;});
