@@ -73,10 +73,10 @@ template<typename T, typename Hash> struct filter_impl {
 #endif
 
   virtual ~filter_impl() {}
-  filter_impl() {}
+  filter_impl(Hash h):hash(h) {}
   filter_impl(filter_impl &&) = default;
   template<typename Iterator>
-  filter_impl(Iterator begin, Iterator end) {
+  filter_impl(Iterator begin, Iterator end, Hash h):hash(h) {
     data.assign(begin,end);
     data_size = data.size();
     filters.resize(data_size);
@@ -179,10 +179,11 @@ template<typename T, typename Hash> struct filter_impl {
 
   template<typename ...Ts>
   std::vector<T> all_filtered(Ts&... dimension) const;
+  std::vector<T> all_filtered_except_mask(const std::vector<uint8_t> & mask) const;
 
   template<typename ...Ts>
   bool is_element_filtered(std::size_t index, Ts&... dimension) const;
-
+  bool is_element_filtered_except_mask(std::size_t index, const std::vector<uint8_t> & mask) const;
 
   template<typename G>
   auto dimension(G getter) -> cross::dimension<decltype(getter(std::declval<record_type_t>())), T, cross::non_iterable, Hash>;

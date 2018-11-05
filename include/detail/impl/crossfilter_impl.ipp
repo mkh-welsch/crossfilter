@@ -127,6 +127,18 @@ inline
 std::vector<T> filter_impl<T,H>::all_filtered(Ts&... dimensions) const {
   std::vector<uint8_t> mask(filters.size());
   mask_for_dimension(mask, dimensions...);
+  // std::vector<T> result;
+
+  // for (std::size_t i = 0; i < data.size(); i++) {
+  //   if (filters.zero_except_mask(i, mask))
+  //     result.push_back(data[i]);
+  // }
+  // return result;
+  return all_filtered_except_mask(mask);
+}
+template<typename T, typename H>
+inline
+std::vector<T> filter_impl<T,H>::all_filtered_except_mask(const std::vector<uint8_t> & mask) const {
   std::vector<T> result;
 
   for (std::size_t i = 0; i < data.size(); i++) {
@@ -142,6 +154,12 @@ inline
 bool filter_impl<T,H>::is_element_filtered(std::size_t index, Ts&... dimensions) const {
   std::vector<uint8_t> mask(filters.size());
   mask_for_dimension(mask, dimensions...);
+  return filters.zero_except_mask(index, mask);
+}
+
+template<typename T, typename H>
+inline
+bool filter_impl<T,H>::is_element_filtered_except_mask(std::size_t index, const std::vector<uint8_t> & mask) const {
   return filters.zero_except_mask(index, mask);
 }
 
